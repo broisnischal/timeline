@@ -2,15 +2,15 @@
 	email admin@discerns.app
 }
 
-http://www.timeline.lexicon.website, https://www.timeline.lexicon.website {
-	redir https://timeline.lexicon.website{uri} permanent
+http://www.lexicon.website, https://www.lexicon.website {
+	redir https://lexicon.website{uri} permanent
 }
 
-http://timeline.lexicon.website {
-	redir https://timeline.lexicon.website{uri} permanent
+http://lexicon.website {
+	redir https://lexicon.website{uri} permanent
 }
 
-https://timeline.lexicon.website {
+https://lexicon.website {
   encode zstd gzip
   reverse_proxy app:3000
 }
