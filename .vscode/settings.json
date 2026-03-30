@@ -2,19 +2,16 @@
   "files.readonlyInclude": {
     "**/routeTree.gen.ts": true,
     "**/.tanstack/**/*": true,
-    "pnpm-lock.yaml": true,
     "bun.lock": true
   },
   "files.watcherExclude": {
     "**/routeTree.gen.ts": true,
     "**/.tanstack/**/*": true,
-    "pnpm-lock.yaml": true,
     "bun.lock": true
   },
   "search.exclude": {
     "**/routeTree.gen.ts": true,
     "**/.tanstack/**/*": true,
-    "pnpm-lock.yaml": true,
     "bun.lock": true
   },
 
@@ -22,7 +19,7 @@
   "explorer.fileNesting.patterns": {
     "tsconfig.json": "tsconfig.*.json, env.d.ts",
     "vite.config.*": "jsconfig*, vitest.config.*, cypress.config.*, playwright.config.*",
-    "package.json": "package-lock.json, pnpm*, .yarnrc*, yarn*, .editorconfig, .gitattributes, oxfmt*, oxlint*, .oxfmt*, .oxlint*, commitlint.config*, bun.lock"
+    "package.json": "package-lock.json, bun.lock, .yarnrc*, yarn*, .editorconfig, .gitattributes, oxfmt*, oxlint*, .oxfmt*, .oxlint*, commitlint.config*"
   },
 
   // use LF line endings

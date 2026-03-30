@@ -1,30 +1,85 @@
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
+import { getRouteApi } from "@tanstack/react-router";
+import { useState } from "react";
+
+import { PlanCapture } from "@/components/timeline/plan-capture";
+import { TaskList } from "@/components/timeline/task-list";
+import { appSearchSchema } from "@/lib/timeline/app-search";
+import { spacesQueryOptions, tasksQueryOptions } from "@/lib/timeline/queries";
+import { defaultTaskRange } from "@/lib/timeline/range";
+
+const appRouteApi = getRouteApi("/_auth/app");
 
 export const Route = createFileRoute("/_auth/app/")({
   component: AppIndex,
+  loader: async ({ context, location }) => {
+    const search = appSearchSchema.parse(location.search ?? {});
+    const range = defaultTaskRange();
+    await Promise.all([
+      context.queryClient.ensureQueryData(spacesQueryOptions()),
+      context.queryClient.ensureQueryData(
+        tasksQueryOptions({
+          ...range,
+          ...(search.space ? { spaceId: search.space } : {}),
+        }),
+      ),
+    ]);
+    return { range };
+  },
 });
 
 function AppIndex() {
-  const { user } = Route.useRouteContext();
-  // we can also use the useAuth() or useAuthSuspense() hooks here from ~/lib/auth/hooks
-  // this is just to demo that route context is available in route components, in addition to loaders/beforeLoad
+  const { range } = Route.useLoaderData();
+  const search = appRouteApi.useSearch();
+  const spaces = useQuery(spacesQueryOptions());
+  const tasks = useQuery(
+    tasksQueryOptions({
+      ...range,
+      ...(search.space ? { spaceId: search.space } : {}),
+    }),
+  );
+
+  const [composeDraft] = useState(() => {
+    if (typeof window === "undefined") return undefined;
+    const t = sessionStorage.getItem("planDraftTitle");
+    if (t) sessionStorage.removeItem("planDraftTitle");
+    return t ?? undefined;
+  });
+
+  const activeSpaceId = search.space ?? spaces.data?.[0]?.id ?? "";
+
+  if (spaces.isPending || tasks.isPending) {
+    return (
+      <div className="animate-pulse py-24 text-center text-sm text-muted-foreground">Loading…</div>
+    );
+  }
+
+  if (spaces.isError || tasks.isError) {
+    return <p className="text-center text-sm text-destructive">Something went wrong.</p>;
+  }
 
   return (
-    <div className="flex flex-col items-center gap-3 text-center text-sm">
-      <pre className="mb-1 rounded-md border bg-card p-1 text-xs text-card-foreground">
-        _auth/app/index.tsx
-      </pre>
-
-      <div>
-        User from route context:
-        <span className="mt-0.5 block font-mono text-xs">{user.name}</span>
+    <div className="space-y-12">
+      <div className="space-y-1">
+        <h1 className="text-2xl font-semibold tracking-tight">Today</h1>
+        <p className="max-w-md text-sm leading-relaxed text-muted-foreground">
+          Start with a line. We&apos;ll ask when it lives and if you want notes.
+        </p>
       </div>
 
+      <PlanCapture
+        key={composeDraft ?? "capture"}
+        activeSpaceId={activeSpaceId}
+        initialTitle={composeDraft}
+        variant="app"
+      />
+
       <div>
-        <p>The /app index page, a protected route, since it is under the _auth layout:</p>
-        <pre className="mx-auto mt-0.5 block w-fit rounded-md border bg-card p-1 text-xs text-card-foreground">
-          _auth/route.tsx
-        </pre>
+        <h2 className="mb-4 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+          Upcoming
+        </h2>
+        <TaskList tasks={tasks.data} />
       </div>
     </div>
   );

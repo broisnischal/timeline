@@ -12,11 +12,16 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as GuestRouteRouteImport } from './routes/_guest/route'
 import { Route as AuthRouteRouteImport } from './routes/_auth/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as PSlugRouteImport } from './routes/p/$slug'
 import { Route as GuestSignupRouteImport } from './routes/_guest/signup'
 import { Route as GuestLoginRouteImport } from './routes/_guest/login'
 import { Route as AuthAppRouteRouteImport } from './routes/_auth/app/route'
 import { Route as AuthAppIndexRouteImport } from './routes/_auth/app/index'
+import { Route as ApiPublicSlugRouteImport } from './routes/api/public/$slug'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as AuthAppTimelineRouteImport } from './routes/_auth/app/timeline'
+import { Route as AuthAppProfileRouteImport } from './routes/_auth/app/profile'
+import { Route as AuthAppAboutRouteImport } from './routes/_auth/app/about'
 
 const GuestRouteRoute = GuestRouteRouteImport.update({
   id: '/_guest',
@@ -29,6 +34,11 @@ const AuthRouteRoute = AuthRouteRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PSlugRoute = PSlugRouteImport.update({
+  id: '/p/$slug',
+  path: '/p/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GuestSignupRoute = GuestSignupRouteImport.update({
@@ -51,10 +61,30 @@ const AuthAppIndexRoute = AuthAppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthAppRouteRoute,
 } as any)
+const ApiPublicSlugRoute = ApiPublicSlugRouteImport.update({
+  id: '/api/public/$slug',
+  path: '/api/public/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthAppTimelineRoute = AuthAppTimelineRouteImport.update({
+  id: '/timeline',
+  path: '/timeline',
+  getParentRoute: () => AuthAppRouteRoute,
+} as any)
+const AuthAppProfileRoute = AuthAppProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => AuthAppRouteRoute,
+} as any)
+const AuthAppAboutRoute = AuthAppAboutRouteImport.update({
+  id: '/about',
+  path: '/about',
+  getParentRoute: () => AuthAppRouteRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -62,14 +92,24 @@ export interface FileRoutesByFullPath {
   '/app': typeof AuthAppRouteRouteWithChildren
   '/login': typeof GuestLoginRoute
   '/signup': typeof GuestSignupRoute
+  '/p/$slug': typeof PSlugRoute
+  '/app/about': typeof AuthAppAboutRoute
+  '/app/profile': typeof AuthAppProfileRoute
+  '/app/timeline': typeof AuthAppTimelineRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/public/$slug': typeof ApiPublicSlugRoute
   '/app/': typeof AuthAppIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof GuestLoginRoute
   '/signup': typeof GuestSignupRoute
+  '/p/$slug': typeof PSlugRoute
+  '/app/about': typeof AuthAppAboutRoute
+  '/app/profile': typeof AuthAppProfileRoute
+  '/app/timeline': typeof AuthAppTimelineRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/public/$slug': typeof ApiPublicSlugRoute
   '/app': typeof AuthAppIndexRoute
 }
 export interface FileRoutesById {
@@ -80,14 +120,40 @@ export interface FileRoutesById {
   '/_auth/app': typeof AuthAppRouteRouteWithChildren
   '/_guest/login': typeof GuestLoginRoute
   '/_guest/signup': typeof GuestSignupRoute
+  '/p/$slug': typeof PSlugRoute
+  '/_auth/app/about': typeof AuthAppAboutRoute
+  '/_auth/app/profile': typeof AuthAppProfileRoute
+  '/_auth/app/timeline': typeof AuthAppTimelineRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/public/$slug': typeof ApiPublicSlugRoute
   '/_auth/app/': typeof AuthAppIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/app' | '/login' | '/signup' | '/api/auth/$' | '/app/'
+  fullPaths:
+    | '/'
+    | '/app'
+    | '/login'
+    | '/signup'
+    | '/p/$slug'
+    | '/app/about'
+    | '/app/profile'
+    | '/app/timeline'
+    | '/api/auth/$'
+    | '/api/public/$slug'
+    | '/app/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/signup' | '/api/auth/$' | '/app'
+  to:
+    | '/'
+    | '/login'
+    | '/signup'
+    | '/p/$slug'
+    | '/app/about'
+    | '/app/profile'
+    | '/app/timeline'
+    | '/api/auth/$'
+    | '/api/public/$slug'
+    | '/app'
   id:
     | '__root__'
     | '/'
@@ -96,7 +162,12 @@ export interface FileRouteTypes {
     | '/_auth/app'
     | '/_guest/login'
     | '/_guest/signup'
+    | '/p/$slug'
+    | '/_auth/app/about'
+    | '/_auth/app/profile'
+    | '/_auth/app/timeline'
     | '/api/auth/$'
+    | '/api/public/$slug'
     | '/_auth/app/'
   fileRoutesById: FileRoutesById
 }
@@ -104,7 +175,9 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRouteRoute: typeof AuthRouteRouteWithChildren
   GuestRouteRoute: typeof GuestRouteRouteWithChildren
+  PSlugRoute: typeof PSlugRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ApiPublicSlugRoute: typeof ApiPublicSlugRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -128,6 +201,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/p/$slug': {
+      id: '/p/$slug'
+      path: '/p/$slug'
+      fullPath: '/p/$slug'
+      preLoaderRoute: typeof PSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_guest/signup': {
@@ -158,6 +238,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthAppIndexRouteImport
       parentRoute: typeof AuthAppRouteRoute
     }
+    '/api/public/$slug': {
+      id: '/api/public/$slug'
+      path: '/api/public/$slug'
+      fullPath: '/api/public/$slug'
+      preLoaderRoute: typeof ApiPublicSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
@@ -165,14 +252,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_auth/app/timeline': {
+      id: '/_auth/app/timeline'
+      path: '/timeline'
+      fullPath: '/app/timeline'
+      preLoaderRoute: typeof AuthAppTimelineRouteImport
+      parentRoute: typeof AuthAppRouteRoute
+    }
+    '/_auth/app/profile': {
+      id: '/_auth/app/profile'
+      path: '/profile'
+      fullPath: '/app/profile'
+      preLoaderRoute: typeof AuthAppProfileRouteImport
+      parentRoute: typeof AuthAppRouteRoute
+    }
+    '/_auth/app/about': {
+      id: '/_auth/app/about'
+      path: '/about'
+      fullPath: '/app/about'
+      preLoaderRoute: typeof AuthAppAboutRouteImport
+      parentRoute: typeof AuthAppRouteRoute
+    }
   }
 }
 
 interface AuthAppRouteRouteChildren {
+  AuthAppAboutRoute: typeof AuthAppAboutRoute
+  AuthAppProfileRoute: typeof AuthAppProfileRoute
+  AuthAppTimelineRoute: typeof AuthAppTimelineRoute
   AuthAppIndexRoute: typeof AuthAppIndexRoute
 }
 
 const AuthAppRouteRouteChildren: AuthAppRouteRouteChildren = {
+  AuthAppAboutRoute: AuthAppAboutRoute,
+  AuthAppProfileRoute: AuthAppProfileRoute,
+  AuthAppTimelineRoute: AuthAppTimelineRoute,
   AuthAppIndexRoute: AuthAppIndexRoute,
 }
 
@@ -210,7 +324,9 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRouteRoute: AuthRouteRouteWithChildren,
   GuestRouteRoute: GuestRouteRouteWithChildren,
+  PSlugRoute: PSlugRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ApiPublicSlugRoute: ApiPublicSlugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

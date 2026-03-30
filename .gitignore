@@ -1,10 +1,9 @@
 node_modules
 
-# Ignore lockfiles we don't use
+# Ignore lockfiles we don't use (Bun uses bun.lock — commit it for reproducible installs)
 # package-lock.json
 # yarn.lock
 # pnpm-lock.yaml
-# bun.lock
 
 .DS_Store
 .cache

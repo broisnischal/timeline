@@ -5,7 +5,7 @@
 A minimal starter template for 🏝️ TanStack Start. [→ Preview here](https://tanstarter.mugnavo.com/)
 
 ```bash
-pnpm create mugnavo
+bun create mugnavo
 ```
 
 - [React 19](https://react.dev) + [React Compiler](https://react.dev/learn/react-compiler)
@@ -24,7 +24,7 @@ pnpm create mugnavo
 1. [Use this template](https://github.com/new?template_name=tanstarter&template_owner=mugnavo) or create a project using our CLI:
 
    ```bash
-   pnpm create mugnavo
+   bun create mugnavo
    ```
 
 2. Create a `.env` file based on [`.env.example`](./.env.example).
@@ -32,8 +32,8 @@ pnpm create mugnavo
 3. Generate the initial migration with drizzle-kit, then apply to your database:
 
    ```sh
-   pnpm db generate
-   pnpm db migrate
+   bun run db generate
+   bun run db migrate
    ```
 
    https://orm.drizzle.team/docs/migrations
@@ -41,7 +41,7 @@ pnpm create mugnavo
 4. Run the development server:
 
    ```bash
-   pnpm dev
+   bun run dev
    ```
 
    The development server should now be running at [http://localhost:3000](http://localhost:3000).
@@ -70,12 +70,12 @@ We use [Husky](https://typicode.github.io/husky/) to run git hooks with the foll
 
 #### Scripts
 
-We use **pnpm** by default, but you can modify these scripts in [package.json](./package.json) to use your preferred package manager.
+We use **[Bun](https://bun.sh)** as the package manager and runtime for CLI tooling (`bun`, `bunx`).
 
 - **`auth:generate`** - Regenerate the [auth db schema](./src/lib/db/schema/auth.schema.ts) if you've made changes to your Better Auth [config](./src/lib/auth/auth.ts).
-- **`db`** - Run [drizzle-kit](https://orm.drizzle.team/docs/kit-overview) commands. (e.g. `pnpm db generate`, `pnpm db studio`)
-- **`ui`** - The shadcn/ui CLI. (e.g. `pnpm ui add button`)
-- **`format`**, **`lint`** - Run Oxfmt and Oxlint, or both via `pnpm check`.
+- **`db`** - Run [drizzle-kit](https://orm.drizzle.team/docs/kit-overview) commands. (e.g. `bun run db generate`, `bun run db studio`)
+- **`ui`** - The shadcn/ui CLI. (e.g. `bun run ui add button`)
+- **`format`**, **`lint`** - Run Oxfmt and Oxlint, or both via `bun run check`.
 - **`deps`** - Selectively upgrade dependencies via taze.
 
 #### Utilities

@@ -1,5 +1,6 @@
 import { a11yDevtoolsPlugin } from "@tanstack/devtools-a11y/react";
 import { TanStackDevtools } from "@tanstack/react-devtools";
+import { HotkeysProvider } from "@tanstack/react-hotkeys";
 import type { QueryClient } from "@tanstack/react-query";
 import { ReactQueryDevtoolsPanel } from "@tanstack/react-query-devtools";
 import { createRootRouteWithContext, HeadContent, Outlet, Scripts } from "@tanstack/react-router";
@@ -30,13 +31,11 @@ export const Route = createRootRouteWithContext<{
         content: "width=device-width, initial-scale=1",
       },
       {
-        // scaffold:title
-        title: "TanStarter",
+        title: "Timeline",
       },
       {
         name: "description",
-        // scaffold:description
-        content: "A minimal starter template for 🏝️ TanStack Start.",
+        content: "Minimal folders, tasks, and timeline — optional public list and API.",
       },
     ],
     links: [
@@ -66,10 +65,12 @@ function RootDocument({ children }: { readonly children: React.ReactNode }) {
       <head>
         <HeadContent />
       </head>
-      <body>
+      <body suppressHydrationWarning>
         <ThemeProvider>
-          {children}
-          <Toaster richColors />
+          <HotkeysProvider>
+            {children}
+            <Toaster richColors />
+          </HotkeysProvider>
         </ThemeProvider>
 
         <TanStackDevtools

@@ -1,44 +1,44 @@
-import { SunIcon, MoonIcon } from "lucide-react";
+import { MonitorIcon, MoonIcon, SunIcon } from "lucide-react";
 
 import { useTheme } from "@/components/theme-provider";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
+
+const modes = [
+  { key: "light" as const, label: "Light theme", Icon: SunIcon },
+  { key: "dark" as const, label: "Dark theme", Icon: MoonIcon },
+  { key: "system" as const, label: "System theme", Icon: MonitorIcon },
+];
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger render={<Button variant="outline" size="icon" />}>
-        <SunIcon className="h-[1.2rem] w-[1.2rem] scale-100 rotate-0 transition-all dark:scale-0 dark:-rotate-90" />
-        <MoonIcon className="absolute h-[1.2rem] w-[1.2rem] scale-0 rotate-90 transition-all dark:scale-100 dark:rotate-0" />
-        <span className="sr-only">Toggle theme</span>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuCheckboxItem
-          checked={theme === "light"}
-          onCheckedChange={(v) => v && setTheme("light")}
-        >
-          Light
-        </DropdownMenuCheckboxItem>
-        <DropdownMenuCheckboxItem
-          checked={theme === "dark"}
-          onCheckedChange={(v) => v && setTheme("dark")}
-        >
-          Dark
-        </DropdownMenuCheckboxItem>
-        <DropdownMenuCheckboxItem
-          checked={theme === "system"}
-          onCheckedChange={(v) => v && setTheme("system")}
-        >
-          System
-        </DropdownMenuCheckboxItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <div
+      className="inline-flex rounded-full bg-muted/50 p-0.5 ring-1 ring-border/40"
+      role="group"
+      aria-label="Theme"
+    >
+      {modes.map(({ key, label, Icon }) => {
+        const active = theme === key;
+        return (
+          <button
+            key={key}
+            type="button"
+            onClick={() => setTheme(key)}
+            aria-label={label}
+            aria-pressed={active}
+            className={cn(
+              "relative rounded-full p-1.5 transition-[color,background-color,box-shadow,transform] duration-200 ease-out",
+              active
+                ? "bg-background text-foreground shadow-sm ring-1 ring-border/45"
+                : "text-muted-foreground hover:text-foreground",
+              "hover:enabled:scale-[1.03] active:enabled:scale-[0.98]",
+            )}
+          >
+            <Icon className="size-3.5" aria-hidden />
+          </button>
+        );
+      })}
+    </div>
   );
 }
