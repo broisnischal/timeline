@@ -1,6 +1,3 @@
-{
-	email admin@discerns.app
-}
 
 http://www.lexicon.website, https://www.lexicon.website {
 	redir https://lexicon.website{uri} permanent
