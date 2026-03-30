@@ -11,11 +11,15 @@ export function UpcomingTasksShimmer({
   return (
     <div className={cn("divide-y divide-border/40", className)} aria-hidden>
       {Array.from({ length: rows }, (_, i) => (
-        <div key={i} className="flex gap-3 py-3.5 first:pt-0 last:pb-0 sm:gap-4 sm:py-4">
-          <div className="relative flex w-10 shrink-0 justify-center pt-0.5">
+        <div
+          key={i}
+          className="grid grid-cols-[2.5rem_3px_minmax(0,1fr)] gap-x-3 py-3.5 first:pt-0 last:pb-0 sm:gap-x-4 sm:py-4"
+        >
+          <div className="flex justify-center pt-0.5">
             <div className="timeline-shimmer-bg size-2 rounded-full bg-muted" />
           </div>
-          <div className="min-w-0 flex-1 space-y-2 pt-0.5">
+          <div className="timeline-shimmer-bg w-[3px] self-stretch rounded-full bg-muted/80" />
+          <div className="min-w-0 space-y-2 pt-0.5">
             <div className="flex flex-wrap items-center gap-2">
               <div className="timeline-shimmer-bg h-4 max-w-[60%] flex-1 rounded-sm bg-muted" />
               <div className="timeline-shimmer-bg size-4 shrink-0 rounded-sm bg-muted/80" />

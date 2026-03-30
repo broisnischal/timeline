@@ -2,6 +2,7 @@ import { useMutation, useQueryClient, type QueryKey } from "@tanstack/react-quer
 import { toast } from "sonner";
 
 import type { TaskListRow } from "@/components/timeline/task-list";
+import { celebrateTaskDone } from "@/lib/confetti/celebrate-task-done";
 import { $toggleTaskDone } from "@/lib/timeline/functions";
 import { taskQueryOptions } from "@/lib/timeline/queries";
 
@@ -68,6 +69,12 @@ export function useToggleTaskDone() {
         old ? mergeTaskWithToggleServer(old, server) : old,
       );
       void qc.invalidateQueries({ queryKey: ["streak"] });
+      if (server.status === "done") {
+        celebrateTaskDone();
+        toast.success("Task completed");
+      } else {
+        toast.message("Marked as to-do");
+      }
     },
   });
 

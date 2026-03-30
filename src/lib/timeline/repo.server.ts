@@ -43,7 +43,7 @@ export async function ensureDefaultSpace(userId: string) {
 }
 
 export async function listSpacesWithCounts(userId: string) {
-  await ensureDefaultSpace(userId);
+  const inbox = await ensureDefaultSpace(userId);
   const spaces = await db
     .select()
     .from(space)
@@ -58,7 +58,11 @@ export async function listSpacesWithCounts(userId: string) {
     .where(eq(task.userId, userId))
     .groupBy(task.spaceId);
   const map = new Map(counts.map((c) => [c.spaceId, Number(c.n)]));
-  return spaces.map((s) => ({ ...s, taskCount: map.get(s.id) ?? 0 }));
+  return spaces.map((s) => ({
+    ...s,
+    taskCount: map.get(s.id) ?? 0,
+    isDefault: s.id === inbox.id,
+  }));
 }
 
 export async function createSpaceRow(
@@ -119,10 +123,7 @@ export async function deleteSpaceRow(userId: string, spaceId: string) {
   if (!s) throw new Error("Space not found");
   const inbox = await ensureDefaultSpace(userId);
   if (s.id === inbox.id) throw new Error("Cannot delete your default space");
-  await db
-    .update(task)
-    .set({ spaceId: inbox.id })
-    .where(and(eq(task.spaceId, spaceId), eq(task.userId, userId)));
+  /** Tasks cascade-delete via FK; do not reassign to inbox. */
   await db.delete(space).where(eq(space.id, spaceId));
 }
 

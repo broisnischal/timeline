@@ -35,7 +35,7 @@ export function TimelineQuickAdd({ activeSpaceId }: { readonly activeSpaceId: st
         },
       }),
     onSuccess: () => {
-      toast.success("Task added");
+      toast.success("Task created");
       setTitle("");
       void qc.invalidateQueries({ queryKey: ["tasks"] });
       void qc.invalidateQueries({ queryKey: ["streak"] });

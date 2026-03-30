@@ -1,16 +1,35 @@
 import type { TaskListRow } from "@/components/timeline/task-list";
 
+/** Curated, muted palette — neutrals + one tone per hue (works on light/dark UI). */
 export const ACCENT_PRESETS = [
-  "#6366f1",
-  "#8b5cf6",
-  "#ec4899",
-  "#f97316",
-  "#eab308",
-  "#22c55e",
-  "#14b8a6",
-  "#0ea5e9",
-  "#64748b",
+  "#52525b",
+  "#57534e",
+  "#44403c",
+  "#0f766e",
+  "#0369a1",
+  "#4338ca",
+  "#6b21a8",
+  "#9f1239",
+  "#9a3412",
+  "#a16207",
+  "#3f6212",
+  "#1e3a5f",
 ] as const;
+
+/** Parse user hex input (#RGB or #RRGGBB). Returns lowercase #rrggbb or null. */
+export function normalizeHexInput(s: string): string | null {
+  const raw = s.trim();
+  if (!raw) return null;
+  const withHash = raw.startsWith("#") ? raw : `#${raw}`;
+  if (/^#[0-9A-Fa-f]{6}$/.test(withHash)) return withHash.toLowerCase();
+  if (/^#[0-9A-Fa-f]{3}$/.test(withHash)) {
+    const r = withHash[1]!;
+    const g = withHash[2]!;
+    const b = withHash[3]!;
+    return `#${r}${r}${g}${g}${b}${b}`.toLowerCase();
+  }
+  return null;
+}
 
 export const EMOJI_GRID: string[] = (
   "✅ 📌 📋 🎯 🚀 💡 🔥 ⚡ 🛠️ 📣 🧠 📝 ✏️ 🗓️ ⏰ 🏃 🏠 💼 🎨 🔒 🌱 📊 💬 🧩 🔭 " +

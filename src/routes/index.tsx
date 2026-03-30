@@ -42,6 +42,11 @@ function HomePage() {
     return list[0]?.id ?? "";
   }, [spaces.data, pickedSpaceId]);
 
+  const activeSpaceRow = useMemo(
+    () => spaces.data?.find((s) => s.id === activeSpaceId),
+    [spaces.data, activeSpaceId],
+  );
+
   const handleSpaceChange = useCallback((id: string) => {
     setPickedSpaceId(id);
     sessionStorage.setItem(HOME_SELECTED_SPACE_KEY, id);
@@ -75,7 +80,15 @@ function HomePage() {
         <div className="mx-auto mt-10 max-w-2xl">
           <div className="mx-auto w-full max-w-xl">
             {!isPending && user && spaces.data?.length ? (
-              <PlanCapture activeSpaceId={activeSpaceId} variant="app" />
+              <PlanCapture
+                activeSpaceId={activeSpaceId}
+                activeSpace={
+                  activeSpaceRow
+                    ? { name: activeSpaceRow.name, color: activeSpaceRow.color }
+                    : undefined
+                }
+                variant="app"
+              />
             ) : (
               <PlanCapture activeSpaceId="" variant="landing" />
             )}

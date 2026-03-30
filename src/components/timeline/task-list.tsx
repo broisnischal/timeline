@@ -1,4 +1,4 @@
-import { Checkbox } from "@/components/ui/checkbox";
+import { TaskDoneCheckbox } from "@/components/timeline/task-done-checkbox";
 import { $listTasks } from "@/lib/timeline/functions";
 import { useToggleTaskDone } from "@/lib/timeline/use-toggle-task-done";
 
@@ -44,11 +44,11 @@ export function TaskList({
             className="flex flex-wrap items-start gap-3 rounded-xl px-1 py-2.5 transition-colors duration-200 ease-out hover:bg-muted/35 sm:px-3 sm:py-3"
           >
             <div className="pt-0.5">
-              <Checkbox
+              <TaskDoneCheckbox
                 checked={done}
                 disabled={toggle.isPendingFor(row.id)}
                 onCheckedChange={() => toggle.mutate(row.id)}
-                className="size-5 transition-all duration-200 ease-out active:scale-[0.96]"
+                className="size-5"
                 aria-label={done ? "Mark as todo" : "Mark done"}
               />
             </div>

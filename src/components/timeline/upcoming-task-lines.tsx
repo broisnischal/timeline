@@ -23,10 +23,10 @@ export function UpcomingTaskLines({
   return (
     <div className="relative">
       <div
-        className="absolute top-6 bottom-6 left-[19px] w-px bg-border/70 max-sm:hidden"
+        className="pointer-events-none absolute top-0 bottom-0 left-5 z-0 w-px bg-border/70 max-sm:hidden"
         aria-hidden
       />
-      <ul className="divide-y divide-border/50">
+      <ul className="relative z-[1] divide-y divide-border/50">
         {tasks.map((row) => (
           <li key={row.id} className="py-4 first:pt-0 last:pb-0 sm:py-5">
             <TimelineFeedRow

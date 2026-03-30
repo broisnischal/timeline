@@ -1,11 +1,21 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { MessageSquareTextIcon, PaletteIcon, SmileIcon, Trash2Icon } from "lucide-react";
+import {
+  CalendarIcon,
+  MessageSquareTextIcon,
+  PaletteIcon,
+  SmileIcon,
+  Trash2Icon,
+} from "lucide-react";
 import { useMemo, useState } from "react";
+import type { DateRange } from "react-day-picker";
 import { toast } from "sonner";
 
+import { AccentColorPicker } from "@/components/timeline/accent-color-picker";
+import { TaskDoneCheckbox } from "@/components/timeline/task-done-checkbox";
 import type { TaskListRow } from "@/components/timeline/task-list";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,7 +24,7 @@ import { Textarea } from "@/components/ui/textarea";
 import type { TaskSubtask } from "@/lib/db/schema/timeline.schema";
 import type { AppSearch } from "@/lib/timeline/app-search";
 import { $appendTaskActivity, $deleteTask, $updateTask } from "@/lib/timeline/functions";
-import { ACCENT_PRESETS, EMOJI_GRID, resolveAccent } from "@/lib/timeline/task-appearance";
+import { EMOJI_GRID, isHexColor, resolveAccent } from "@/lib/timeline/task-appearance";
 import { useToggleTaskDone } from "@/lib/timeline/use-toggle-task-done";
 import { cn } from "@/lib/utils";
 
@@ -24,16 +34,6 @@ const logTimeFmt = new Intl.DateTimeFormat(undefined, {
   hour: "numeric",
   minute: "2-digit",
 });
-
-function toDateInputValue(iso: string | Date | null | undefined): string {
-  if (iso == null) return "";
-  const d = typeof iso === "string" ? new Date(iso) : iso;
-  if (Number.isNaN(d.getTime())) return "";
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
 
 function startOfDayLocalFromParts(y: number, m: number, d: number) {
   const x = new Date(y, m - 1, d);
@@ -47,21 +47,142 @@ function endOfDayLocalFromParts(y: number, m: number, d: number) {
   return x.toISOString();
 }
 
-function parseDateInput(s: string): string | null {
-  if (!s) return null;
-  const [y, m, d] = s.split("-").map(Number);
-  if (!y || !m || !d) return null;
-  return startOfDayLocalFromParts(y, m, d);
+/** Local calendar day from stored ISO (avoids timezone shifting the displayed day). */
+function localDayFromIso(iso: string | Date | null | undefined): Date | undefined {
+  if (iso == null) return undefined;
+  const d = iso instanceof Date ? iso : new Date(iso);
+  if (Number.isNaN(d.getTime())) return undefined;
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
 }
 
-function parseDueDateInput(s: string): string | null {
-  if (!s) return null;
-  const [y, m, d] = s.split("-").map(Number);
-  if (!y || !m || !d) return null;
-  return endOfDayLocalFromParts(y, m, d);
+function rangeFromRow(
+  startsAt?: string | Date | null,
+  dueAt?: string | Date | null,
+): DateRange | undefined {
+  const from = localDayFromIso(startsAt ?? undefined);
+  const toRaw = localDayFromIso(dueAt ?? undefined);
+  if (!from && !toRaw) return undefined;
+  const start = from ?? toRaw;
+  if (!start) return undefined;
+  const end = toRaw ?? start;
+  return { from: start, to: end };
+}
+
+function rangeToTaskPatch(range: DateRange | undefined): {
+  startsAt: string | null;
+  dueAt: string | null;
+} {
+  if (!range?.from) return { startsAt: null, dueAt: null };
+  const from = range.from;
+  const to = range.to ?? range.from;
+  return {
+    startsAt: startOfDayLocalFromParts(from.getFullYear(), from.getMonth() + 1, from.getDate()),
+    dueAt: endOfDayLocalFromParts(to.getFullYear(), to.getMonth() + 1, to.getDate()),
+  };
 }
 
 type SpaceOption = { id: string; name: string };
+
+function TaskScheduleFields({
+  startsAt,
+  dueAt,
+  onSave,
+}: {
+  readonly startsAt: string | Date | null | undefined;
+  readonly dueAt: string | Date | null | undefined;
+  readonly onSave: (patch: { startsAt: string | null; dueAt: string | null }) => void;
+}) {
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(() =>
+    rangeFromRow(startsAt, dueAt),
+  );
+  const [rangeOpen, setRangeOpen] = useState(false);
+
+  const scheduleRangeLabel = useMemo(() => {
+    if (!dateRange?.from) return null;
+    const fmt = new Intl.DateTimeFormat(undefined, {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+    const start = fmt.format(dateRange.from);
+    const end = dateRange.to ? fmt.format(dateRange.to) : null;
+    if (!end || start === end) return start;
+    return `${start} → ${end}`;
+  }, [dateRange]);
+
+  const commitDateRangeOnClose = (open: boolean) => {
+    setRangeOpen(open);
+    if (open) return;
+    let next = dateRange;
+    if (next?.from && !next.to) {
+      next = { from: next.from, to: next.from };
+    }
+    setDateRange(next);
+    const { startsAt: s, dueAt: d } = rangeToTaskPatch(next);
+    const server = rangeToTaskPatch(rangeFromRow(startsAt, dueAt));
+    if (s !== server.startsAt || d !== server.dueAt) {
+      onSave({ startsAt: s, dueAt: d });
+    }
+  };
+
+  return (
+    <div>
+      <p className="text-[11px] font-medium tracking-wider text-muted-foreground uppercase">
+        Schedule
+      </p>
+      <p className="mt-0.5 text-xs text-muted-foreground">
+        Click a day, then another — or one day for a single-day task.
+      </p>
+      <Popover open={rangeOpen} onOpenChange={commitDateRangeOnClose}>
+        <PopoverTrigger
+          className={cn(
+            buttonVariants({ variant: "outline", size: "default" }),
+            "mt-3 h-auto min-h-10 w-full max-w-md justify-start gap-2 px-3 py-2 text-left font-normal sm:w-auto",
+          )}
+          aria-expanded={rangeOpen}
+          aria-label="Edit date range"
+        >
+          <CalendarIcon className="size-4 shrink-0 opacity-70" aria-hidden />
+          <span className="min-w-0 flex-1 truncate">
+            {scheduleRangeLabel ?? "No dates — tap to add a range"}
+          </span>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto gap-0 p-0" align="start">
+          <div className="border-b border-border/60 px-3 py-2">
+            <p className="text-xs font-medium text-foreground">Date range</p>
+            <p className="text-[11px] text-muted-foreground">
+              Drag across days or tap twice for a span.
+            </p>
+          </div>
+          <div className="flex justify-center p-1">
+            <Calendar
+              mode="range"
+              selected={dateRange}
+              onSelect={setDateRange}
+              numberOfMonths={1}
+              defaultMonth={dateRange?.from ?? new Date()}
+            />
+          </div>
+          <div className="flex justify-end gap-2 border-t border-border/60 p-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="text-xs"
+              onClick={() => {
+                setDateRange(undefined);
+                onSave({ startsAt: null, dueAt: null });
+                setRangeOpen(false);
+              }}
+            >
+              Clear dates
+            </Button>
+          </div>
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+}
 
 export function TaskDetailForm({
   row,
@@ -88,8 +209,6 @@ export function TaskDetailForm({
   const [title, setTitle] = useState(row.title);
   const [notes, setNotes] = useState(row.notes ?? "");
   const [outcome, setOutcome] = useState(row.outcome ?? "");
-  const [starts, setStarts] = useState(() => toDateInputValue(row.startsAt));
-  const [due, setDue] = useState(() => toDateInputValue(row.dueAt));
   const [spaceId, setSpaceId] = useState(row.spaceId);
   const [subDraft, setSubDraft] = useState("");
   const [logDraft, setLogDraft] = useState("");
@@ -121,6 +240,20 @@ export function TaskDetailForm({
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const saveField = (partial: TaskPatch, opts?: { ok?: string }) => {
+    patch.mutate(
+      { id: row.id, ...partial },
+      opts?.ok ? { onSuccess: () => toast.success(opts.ok!) } : undefined,
+    );
+  };
+
+  const setSubtasks = (next: TaskSubtask[], ok?: string) => {
+    patch.mutate(
+      { id: row.id, subtasks: next },
+      ok ? { onSuccess: () => toast.success(ok) } : undefined,
+    );
+  };
+
   const toggle = useToggleTaskDone();
 
   const appendLog = useMutation({
@@ -128,6 +261,7 @@ export function TaskDetailForm({
     onSuccess: () => {
       setLogDraft("");
       invalidate();
+      toast.success("Activity logged");
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -139,25 +273,14 @@ export function TaskDetailForm({
 
   const done = row.status === "done";
 
-  const saveField = (partial: TaskPatch) => {
-    patch.mutate({ id: row.id, ...partial });
-  };
-
-  const setSubtasks = (next: TaskSubtask[]) => saveField({ subtasks: next });
-
   return (
     <div className="space-y-10">
-      <div
-        className={cn(
-          "rounded-2xl border border-border/60 bg-card/50 p-6 shadow-sm",
-          "ring-1 ring-foreground/[0.04]",
-        )}
-      >
-        <div className="flex flex-wrap items-start gap-4">
+      <div className="divide-y divide-border/50">
+        <div className="flex flex-wrap items-start gap-4 pb-8">
           <div
             className={cn(
-              "flex size-14 shrink-0 items-center justify-center rounded-2xl border-2 border-background text-2xl shadow-sm ring-1 ring-border/50",
-              !accent && "bg-muted",
+              "flex size-14 shrink-0 items-center justify-center rounded-2xl border-2 border-background text-2xl shadow-sm ring-1 ring-border/40",
+              !accent && "bg-muted/80",
             )}
             style={
               accent ? { backgroundColor: `${accent}22`, borderColor: `${accent}66` } : undefined
@@ -172,8 +295,8 @@ export function TaskDetailForm({
               />
             )}
           </div>
-          <div className="min-w-0 flex-1 space-y-4">
-            <div className="flex flex-wrap items-center gap-2">
+          <div className="min-w-0 flex-1 space-y-5">
+            <div className="flex flex-wrap items-start gap-2 sm:items-center">
               <Label htmlFor="task-title" className="sr-only">
                 Title
               </Label>
@@ -185,9 +308,12 @@ export function TaskDetailForm({
                   const t = title.trim();
                   if (t && t !== row.title) saveField({ title: t });
                 }}
-                className="text-lg font-semibold tracking-tight"
+                className={cn(
+                  "min-h-11 flex-1 border-0 bg-transparent px-0 text-xl font-semibold tracking-tight shadow-none",
+                  "ring-0 focus-visible:ring-0 md:text-2xl",
+                )}
               />
-              <div className="flex gap-1">
+              <div className="flex shrink-0 gap-1">
                 <Popover open={emojiOpen} onOpenChange={setEmojiOpen}>
                   <PopoverTrigger
                     className={cn(
@@ -198,18 +324,16 @@ export function TaskDetailForm({
                   >
                     <SmileIcon className="size-4" />
                   </PopoverTrigger>
-                  <PopoverContent className="w-[min(100vw-2rem,20rem)] p-3" align="end">
-                    <p className="mb-2 text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
-                      Emoji
-                    </p>
-                    <div className="grid max-h-48 grid-cols-8 gap-1 overflow-y-auto pr-1">
+                  <PopoverContent className="w-[min(100vw-2rem,18rem)] gap-0 p-3" align="end">
+                    <p className="mb-2 text-[11px] font-medium text-muted-foreground">Emoji</p>
+                    <div className="grid max-h-44 grid-cols-8 gap-0.5 overflow-y-auto pr-1">
                       {EMOJI_GRID.map((em) => (
                         <button
                           key={em}
                           type="button"
-                          className="flex size-9 items-center justify-center rounded-lg text-lg transition-colors hover:bg-muted"
+                          className="flex size-8 items-center justify-center rounded-md text-base transition-colors hover:bg-muted"
                           onClick={() => {
-                            saveField({ icon: em });
+                            saveField({ icon: em }, { ok: "Emoji updated" });
                             setEmojiOpen(false);
                           }}
                         >
@@ -223,7 +347,7 @@ export function TaskDetailForm({
                       size="sm"
                       className="mt-2 w-full text-xs"
                       onClick={() => {
-                        saveField({ icon: null });
+                        saveField({ icon: null }, { ok: "Emoji cleared" });
                         setEmojiOpen(false);
                       }}
                     >
@@ -241,148 +365,155 @@ export function TaskDetailForm({
                   >
                     <PaletteIcon className="size-4" />
                   </PopoverTrigger>
-                  <PopoverContent className="w-56 p-3" align="end">
-                    <p className="mb-2 text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
-                      Accent color
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {ACCENT_PRESETS.map((c) => (
-                        <button
-                          key={c}
-                          type="button"
-                          className="size-8 rounded-full ring-2 ring-transparent transition-transform hover:scale-105 focus-visible:ring-ring"
-                          style={{ backgroundColor: c }}
-                          onClick={() => {
-                            saveField({ accentColor: c });
-                            setColorOpen(false);
-                          }}
-                          aria-label={`Color ${c}`}
-                        />
-                      ))}
-                    </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="mt-2 w-full text-xs"
-                      onClick={() => {
-                        saveField({ accentColor: null });
-                        setColorOpen(false);
+                  <PopoverContent className="w-[min(100vw-2rem,16rem)] gap-0 p-3" align="end">
+                    <p className="mb-2 text-[11px] font-medium text-muted-foreground">Accent</p>
+                    <AccentColorPicker
+                      key={row.accentColor ?? "none"}
+                      value={isHexColor(row.accentColor ?? undefined) ? row.accentColor : null}
+                      onChange={(next) => {
+                        saveField(
+                          { accentColor: next },
+                          { ok: next == null ? "Using space color" : "Accent updated" },
+                        );
                       }}
-                    >
-                      Use category color
-                    </Button>
+                      clearLabel="Use space color"
+                    />
                   </PopoverContent>
                 </Popover>
               </div>
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
-              <Checkbox
+              <TaskDoneCheckbox
                 checked={done}
                 disabled={toggle.isPendingFor(row.id)}
                 onCheckedChange={() => toggle.mutate(row.id)}
                 id="task-done"
+                className="size-5"
               />
               <Label htmlFor="task-done" className="text-sm font-normal">
                 Mark complete
               </Label>
             </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="task-space">Category</Label>
-                <select
-                  id="task-space"
-                  className={cn(
-                    "flex h-10 w-full rounded-xl border border-input/80 bg-background px-3 text-sm",
-                    "outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
-                  )}
-                  value={spaceId}
-                  onChange={(e) => {
-                    const next = e.target.value;
-                    setSpaceId(next);
-                    saveField({ spaceId: next });
-                  }}
-                >
-                  {spaces.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="space-y-2">
-                <Label>Visibility</Label>
-                <div className="flex h-10 items-center gap-2">
-                  <Checkbox
-                    checked={row.isPublic}
-                    id="task-public"
-                    onCheckedChange={(c) => saveField({ isPublic: c === true })}
-                  />
-                  <Label htmlFor="task-public" className="text-sm font-normal">
-                    Show on public profile
-                  </Label>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="task-starts">Start date</Label>
-                <Input
-                  id="task-starts"
-                  type="date"
-                  value={starts}
-                  onChange={(e) => setStarts(e.target.value)}
-                  onBlur={() => saveField({ startsAt: starts ? parseDateInput(starts) : null })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="task-due">Due date</Label>
-                <Input
-                  id="task-due"
-                  type="date"
-                  value={due}
-                  onChange={(e) => setDue(e.target.value)}
-                  onBlur={() => saveField({ dueAt: due ? parseDueDateInput(due) : null })}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="task-notes">Notes</Label>
-              <Textarea
-                id="task-notes"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                onBlur={() => {
-                  const n = notes.trim();
-                  if (n !== (row.notes ?? "")) saveField({ notes: n || null });
-                }}
-                placeholder="Context, links, acceptance criteria…"
-                className="min-h-[100px] resize-y"
-              />
-            </div>
-
-            {done ? (
-              <div className="space-y-2">
-                <Label htmlFor="task-outcome">Outcome</Label>
-                <Textarea
-                  id="task-outcome"
-                  value={outcome}
-                  onChange={(e) => setOutcome(e.target.value)}
-                  onBlur={() => {
-                    const o = outcome.trim();
-                    if (o !== (row.outcome ?? "")) saveField({ outcome: o || null });
-                  }}
-                  placeholder="What shipped, what you learned…"
-                  className="min-h-[80px] resize-y"
-                />
-              </div>
-            ) : null}
           </div>
         </div>
+
+        <div className="space-y-5 py-8">
+          <TaskScheduleFields
+            key={`${String(row.startsAt ?? "")}-${String(row.dueAt ?? "")}`}
+            startsAt={row.startsAt}
+            dueAt={row.dueAt}
+            onSave={(p) => {
+              const cleared = !p.startsAt && !p.dueAt;
+              saveField(p, { ok: cleared ? "Schedule cleared" : "Schedule updated" });
+            }}
+          />
+
+          <div className="grid gap-6 sm:grid-cols-2 sm:gap-8">
+            <div className="space-y-2">
+              <Label
+                htmlFor="task-space"
+                className="text-[11px] font-medium tracking-wider uppercase"
+              >
+                Space
+              </Label>
+              <select
+                id="task-space"
+                className={cn(
+                  "flex h-10 w-full rounded-lg border border-input/60 bg-background px-3 text-sm",
+                  "transition-colors outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
+                )}
+                value={spaceId}
+                onChange={(e) => {
+                  const next = e.target.value;
+                  setSpaceId(next);
+                  const name = spaces.find((s) => s.id === next)?.name ?? "space";
+                  saveField({ spaceId: next }, { ok: `Moved to ${name}` });
+                }}
+              >
+                {spaces.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <span className="text-[11px] font-medium tracking-wider text-foreground uppercase">
+                Visibility
+              </span>
+              <div className="flex min-h-10 items-center gap-2.5 rounded-lg border border-transparent px-0 py-1">
+                <Checkbox
+                  checked={row.isPublic}
+                  id="task-public"
+                  onCheckedChange={(c) =>
+                    saveField(
+                      { isPublic: c === true },
+                      {
+                        ok: c === true ? "Shown on public profile" : "Hidden from public profile",
+                      },
+                    )
+                  }
+                />
+                <Label htmlFor="task-public" className="text-sm leading-snug font-normal">
+                  Show on public profile
+                </Label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-3 pt-8">
+          <div>
+            <Label
+              htmlFor="task-notes"
+              className="text-[11px] font-medium tracking-wider uppercase"
+            >
+              Notes
+            </Label>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Context, links, acceptance criteria — whatever helps you finish.
+            </p>
+          </div>
+          <Textarea
+            id="task-notes"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            onBlur={() => {
+              const n = notes.trim();
+              if (n !== (row.notes ?? "")) saveField({ notes: n || null });
+            }}
+            placeholder="Write freely — markdown-style lists work well here."
+            className="min-h-34 resize-y rounded-lg border-input/60 bg-background leading-relaxed placeholder:text-muted-foreground/80"
+          />
+        </div>
+
+        {done ? (
+          <div className="space-y-3 border-t border-border/50 pt-8">
+            <div>
+              <Label
+                htmlFor="task-outcome"
+                className="text-[11px] font-medium tracking-wider uppercase"
+              >
+                Outcome
+              </Label>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Capture what shipped or what you learned when this task is done.
+              </p>
+            </div>
+            <Textarea
+              id="task-outcome"
+              value={outcome}
+              onChange={(e) => setOutcome(e.target.value)}
+              onBlur={() => {
+                const o = outcome.trim();
+                if (o !== (row.outcome ?? "")) saveField({ outcome: o || null });
+              }}
+              placeholder="What shipped, what you learned…"
+              className="min-h-24 resize-y rounded-lg border-input/60 bg-background leading-relaxed"
+            />
+          </div>
+        ) : null}
       </div>
 
       <section className="space-y-3">
@@ -393,13 +524,17 @@ export function TaskDetailForm({
               key={s.id}
               className="flex items-start gap-3 rounded-xl border border-border/50 bg-muted/20 px-3 py-2"
             >
-              <Checkbox
+              <TaskDoneCheckbox
                 checked={s.done}
                 disabled={patch.isPending}
-                onCheckedChange={() =>
-                  setSubtasks(subtasks.map((x) => (x.id === s.id ? { ...x, done: !x.done } : x)))
-                }
-                className="mt-0.5"
+                onCheckedChange={() => {
+                  const willBeDone = !s.done;
+                  setSubtasks(
+                    subtasks.map((x) => (x.id === s.id ? { ...x, done: !x.done } : x)),
+                    willBeDone ? "Subtask completed" : "Subtask reopened",
+                  );
+                }}
+                className="mt-0.5 size-4"
               />
               <span className={cn("text-sm", s.done && "text-muted-foreground line-through")}>
                 {s.title}
@@ -418,7 +553,10 @@ export function TaskDetailForm({
                 e.preventDefault();
                 const t = subDraft.trim();
                 if (!t) return;
-                setSubtasks([...subtasks, { id: crypto.randomUUID(), title: t, done: false }]);
+                setSubtasks(
+                  [...subtasks, { id: crypto.randomUUID(), title: t, done: false }],
+                  "Subtask added",
+                );
                 setSubDraft("");
               }
             }}
@@ -429,7 +567,10 @@ export function TaskDetailForm({
             onClick={() => {
               const t = subDraft.trim();
               if (!t) return;
-              setSubtasks([...subtasks, { id: crypto.randomUUID(), title: t, done: false }]);
+              setSubtasks(
+                [...subtasks, { id: crypto.randomUUID(), title: t, done: false }],
+                "Subtask added",
+              );
               setSubDraft("");
             }}
           >

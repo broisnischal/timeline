@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { ArrowRightIcon, ChevronDownIcon, FolderIcon } from "lucide-react";
 
 import { ThemeToggle } from "@/components/theme-toggle";
+import { SpaceColorDot } from "@/components/timeline/space-color-dot";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -10,13 +11,13 @@ import {
   DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { appSearchEmpty } from "@/lib/timeline/app-search";
+import { isHexColor } from "@/lib/timeline/task-appearance";
 import { cn } from "@/lib/utils";
 
-type SpaceRow = { id: string; name: string };
+type SpaceRow = { id: string; name: string; color: string | null };
 
 type HomeNavbarProps = {
   readonly loggedIn: boolean;
@@ -36,7 +37,8 @@ export function HomeNavbar({
   onSpaceChange,
 }: HomeNavbarProps) {
   const hasSpaces = Boolean(spaces?.length);
-  const currentName = spaces?.find((s) => s.id === activeSpaceId)?.name ?? "Category";
+  const activeSpaceRow = spaces?.find((s) => s.id === activeSpaceId);
+  const currentName = activeSpaceRow?.name ?? "Space";
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/50 bg-background/90 backdrop-blur-md supports-[backdrop-filter]:bg-background/75">
@@ -68,7 +70,11 @@ export function HomeNavbar({
                     }
                   >
                     <span className="inline-flex min-w-0 items-center gap-1.5 text-muted-foreground">
-                      <FolderIcon className="size-3.5 shrink-0 opacity-70" aria-hidden />
+                      {isHexColor(activeSpaceRow?.color) ? (
+                        <SpaceColorDot color={activeSpaceRow?.color} />
+                      ) : (
+                        <FolderIcon className="size-3.5 shrink-0 opacity-70" aria-hidden />
+                      )}
                       <span className="truncate">{currentName}</span>
                     </span>
                     <ChevronDownIcon
@@ -76,16 +82,25 @@ export function HomeNavbar({
                       aria-hidden
                     />
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="w-56 sm:w-60">
+                  <DropdownMenuContent
+                    align="start"
+                    className="w-[min(100vw-2rem,15rem)] p-1.5 sm:w-60"
+                  >
                     <DropdownMenuGroup>
-                      <DropdownMenuLabel className="font-normal text-muted-foreground">
+                      <DropdownMenuLabel className="px-2.5 pt-1 pb-2 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
                         Save new plans to
                       </DropdownMenuLabel>
-                      <DropdownMenuSeparator />
                       <DropdownMenuRadioGroup value={activeSpaceId} onValueChange={onSpaceChange}>
                         {spaces!.map((s) => (
-                          <DropdownMenuRadioItem key={s.id} value={s.id} className="cursor-pointer">
-                            {s.name}
+                          <DropdownMenuRadioItem
+                            key={s.id}
+                            value={s.id}
+                            className="cursor-pointer gap-2 pr-2"
+                          >
+                            <span className="flex w-4 shrink-0 justify-center" aria-hidden>
+                              <SpaceColorDot color={s.color} />
+                            </span>
+                            <span className="min-w-0 flex-1 truncate">{s.name}</span>
                           </DropdownMenuRadioItem>
                         ))}
                       </DropdownMenuRadioGroup>

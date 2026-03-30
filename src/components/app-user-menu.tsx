@@ -27,7 +27,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { signOutSession } from "@/lib/auth/sign-out";
-import { SITE_GITHUB_URL, THEME_TOGGLE_HOTKEY } from "@/lib/site";
+import { SITE_GITHUB_URL } from "@/lib/site";
 
 const appRouteApi = getRouteApi("/_auth/app");
 
@@ -75,9 +75,6 @@ export function AppUserMenu() {
             <span className="inline-flex items-center gap-1.5">
               <PaletteIcon className="size-3.5 opacity-70" aria-hidden />
               Appearance
-            </span>
-            <span className="text-[10px] font-normal tracking-tight text-muted-foreground/90 normal-case">
-              Toggle light/dark: {THEME_TOGGLE_HOTKEY}
             </span>
           </DropdownMenuLabel>
           <DropdownMenuRadioGroup

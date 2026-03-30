@@ -53,6 +53,7 @@ function AppIndex() {
   });
 
   const activeSpaceId = search.space ?? spaces.data?.[0]?.id ?? "";
+  const activeSpaceRow = spaces.data?.find((s) => s.id === activeSpaceId);
 
   const initialSpacesLoading = spaces.isPending && spaces.data === undefined;
   const initialTasksLoading = tasks.isPending && tasks.data === undefined;
@@ -94,6 +95,9 @@ function AppIndex() {
       <PlanCapture
         key={composeDraft ?? "capture"}
         activeSpaceId={activeSpaceId}
+        activeSpace={
+          activeSpaceRow ? { name: activeSpaceRow.name, color: activeSpaceRow.color } : undefined
+        }
         initialTitle={composeDraft}
         variant="app"
       />

@@ -50,7 +50,7 @@ export function TaskComposer({ activeSpaceId }: { readonly activeSpaceId: string
       setStartDay("");
       setDueDay("");
       setMakePublic(false);
-      toast.success("Added");
+      toast.success("Task created");
       invalidate();
     },
     onError: (e: Error) => toast.error(e.message || "Could not create task"),

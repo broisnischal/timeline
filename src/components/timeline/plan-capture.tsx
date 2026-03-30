@@ -1,10 +1,11 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { PlusIcon } from "lucide-react";
+import { SearchIcon } from "lucide-react";
 import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 import type { DateRange } from "react-day-picker";
 import { toast } from "sonner";
 
+import { SpaceColorDot } from "@/components/timeline/space-color-dot";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -21,6 +22,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { $createTask } from "@/lib/timeline/functions";
 import { mergeCreatedTaskIntoCaches } from "@/lib/timeline/task-cache-helpers";
+import { cn } from "@/lib/utils";
 
 type Step = "idle" | "range" | "notes" | "auth";
 
@@ -36,18 +38,56 @@ function endOfDayLocal(d: Date) {
   return x.toISOString();
 }
 
+function PlanContextSummary({
+  titleText,
+  space,
+  variant,
+}: {
+  readonly titleText: string;
+  readonly space: { name: string; color: string | null } | undefined;
+  readonly variant: "app" | "landing";
+}) {
+  if (variant === "app" && space) {
+    return (
+      <div className="rounded-xl border border-border/50 bg-muted/20 p-3.5">
+        <p className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
+          New plan in
+        </p>
+        <div className="mt-2 flex items-center gap-2">
+          <SpaceColorDot color={space.color} />
+          <span className="min-w-0 truncate text-sm font-medium text-foreground">{space.name}</span>
+        </div>
+        <p className="mt-3 border-t border-border/50 pt-3 text-sm leading-snug text-foreground">
+          {titleText}
+        </p>
+        <p className="mt-1.5 text-[11px] leading-relaxed text-muted-foreground">
+          Saved here and visible on your timeline for this space.
+        </p>
+      </div>
+    );
+  }
+  return (
+    <p className="rounded-lg border border-border/50 bg-muted/15 px-3 py-2.5 text-sm leading-snug font-medium text-foreground">
+      {titleText}
+    </p>
+  );
+}
+
 export function PlanCapture({
   activeSpaceId,
+  activeSpace,
   initialTitle,
   variant = "app",
 }: {
   readonly activeSpaceId: string;
+  readonly activeSpace?: { name: string; color: string | null } | undefined;
   readonly initialTitle?: string | undefined;
   readonly variant?: "app" | "landing";
 }) {
   const qc = useQueryClient();
   const inputRef = useRef<HTMLInputElement>(null);
   const formId = useId();
+  const hintId = useId();
   const [title, setTitle] = useState(() => initialTitle ?? "");
   const [step, setStep] = useState<Step>(() => (initialTitle?.trim() ? "range" : "idle"));
   const [range, setRange] = useState<DateRange | undefined>();
@@ -72,7 +112,7 @@ export function PlanCapture({
       return;
     }
     if (!activeSpaceId) {
-      toast.error("Loading categories…");
+      toast.error("Loading spaces…");
       return;
     }
     setStep("range");
@@ -106,7 +146,7 @@ export function PlanCapture({
     },
     onSuccess: (created) => {
       mergeCreatedTaskIntoCaches(qc, created);
-      toast.success("Plan added");
+      toast.success("Task created");
       setTitle("");
       setNotes("");
       setRange(undefined);
@@ -129,14 +169,21 @@ export function PlanCapture({
   };
 
   const dialogOpen = step !== "idle";
+  const planInputId = `${formId}-plan`;
 
   return (
     <>
-      <div className="flex items-center gap-3 rounded-2xl bg-card/50 px-3 py-2.5 ring-1 ring-border/80">
-        <PlusIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+      <div className="relative min-w-0">
+        <label htmlFor={planInputId} className="sr-only">
+          Add a plan
+        </label>
+        <SearchIcon
+          className="pointer-events-none absolute top-1/2 left-3 z-10 size-4 -translate-y-1/2 text-muted-foreground/65"
+          aria-hidden
+        />
         <Input
           ref={inputRef}
-          id={`${formId}-plan`}
+          id={planInputId}
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           onKeyDown={(e) => {
@@ -146,13 +193,26 @@ export function PlanCapture({
             }
           }}
           placeholder="Add your plan, a link, or plain text…"
-          className="h-10 flex-1 border-0 bg-transparent text-base shadow-none ring-0 placeholder:text-muted-foreground/70 focus-visible:ring-0"
           autoComplete="off"
+          title={`Continue — ${modKey}+K to focus`}
+          aria-describedby={hintId}
+          className={cn(
+            "h-9 rounded-full border border-border/50 bg-muted/15 py-1 pr-[4.25rem] pl-9 text-sm shadow-none",
+            "placeholder:text-muted-foreground/70",
+            "focus-visible:border-border focus-visible:ring-1 focus-visible:ring-ring/35",
+          )}
         />
-        <KbdGroup className="hidden shrink-0 text-muted-foreground sm:inline-flex">
-          <Kbd suppressHydrationWarning>{modKey}</Kbd>
-          <Kbd>K</Kbd>
-        </KbdGroup>
+        <span
+          id={hintId}
+          className="pointer-events-none absolute top-1/2 right-2 hidden -translate-y-1/2 items-center gap-0.5 sm:flex"
+        >
+          <KbdGroup className="opacity-60">
+            <Kbd className="h-4 min-w-6 px-1 text-[10px]" suppressHydrationWarning>
+              {modKey}
+            </Kbd>
+            <Kbd className="h-4 min-w-[1.125rem] px-1 text-[10px]">K</Kbd>
+          </KbdGroup>
+        </span>
       </div>
 
       <Dialog
@@ -165,24 +225,29 @@ export function PlanCapture({
           }
         }}
       >
-        <DialogContent className="max-w-md sm:max-w-lg" showCloseButton>
+        <DialogContent className="max-w-[min(100%-1.5rem,30rem)] gap-5 sm:max-w-lg" showCloseButton>
           {step === "auth" && (
             <>
-              <DialogHeader>
+              <DialogHeader className="gap-2">
                 <DialogTitle>Save your plan</DialogTitle>
                 <DialogDescription>
-                  Create a free account to pick dates, add notes, and keep everything in one
-                  timeline.
+                  Create a free account to pick dates and add notes. Your plans stay on your
+                  personal timeline.
                 </DialogDescription>
               </DialogHeader>
-              <p className="rounded-lg bg-muted/50 px-3 py-2 text-sm text-foreground">
+              <p className="rounded-xl border border-border/50 bg-muted/20 px-3.5 py-3 text-sm leading-relaxed text-foreground">
                 &ldquo;{title.trim()}&rdquo;
               </p>
               <DialogFooter className="gap-2 sm:justify-start">
-                <Button nativeButton={false} render={<Link to="/signup" />}>
+                <Button size="sm" nativeButton={false} render={<Link to="/signup" />}>
                   Sign up
                 </Button>
-                <Button nativeButton={false} render={<Link to="/login" />} variant="outline">
+                <Button
+                  size="sm"
+                  nativeButton={false}
+                  render={<Link to="/login" />}
+                  variant="outline"
+                >
                   Log in
                 </Button>
               </DialogFooter>
@@ -191,14 +256,19 @@ export function PlanCapture({
 
           {step === "range" && (
             <>
-              <DialogHeader>
-                <DialogTitle>When?</DialogTitle>
+              <DialogHeader className="gap-2">
+                <p className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
+                  Step 1 of 2 · When
+                </p>
+                <DialogTitle>Pick when this plan lives</DialogTitle>
                 <DialogDescription>
-                  Choose the window for this plan — drag across days or tap start and end.
+                  Drag across the calendar for a date range, or click a single day. Use{" "}
+                  <span className="text-foreground/90">Next</span> to continue — one day counts as
+                  both start and end.
                 </DialogDescription>
               </DialogHeader>
-              <p className="font-medium text-foreground">{title.trim()}</p>
-              <div className="flex justify-center">
+              <PlanContextSummary titleText={title.trim()} space={activeSpace} variant={variant} />
+              <div className="-mx-1 flex justify-center">
                 <Calendar
                   mode="range"
                   selected={range}
@@ -207,36 +277,41 @@ export function PlanCapture({
                   defaultMonth={new Date()}
                 />
               </div>
-              <DialogFooter>
-                <Button type="button" variant="ghost" onClick={() => setStep("idle")}>
-                  Back
+              {canSingleDay && !range?.to ? (
+                <p className="text-center text-[11px] text-muted-foreground">
+                  One day selected — we&apos;ll use that full day as your window.
+                </p>
+              ) : null}
+              <DialogFooter className="gap-2 sm:gap-2">
+                <Button type="button" variant="ghost" size="sm" onClick={() => setStep("idle")}>
+                  Cancel
                 </Button>
                 <Button
                   type="button"
+                  size="sm"
                   disabled={!canContinueRange && !canSingleDay}
                   onClick={goToNotes}
                 >
                   Next
                 </Button>
               </DialogFooter>
-              {canSingleDay && !range?.to ? (
-                <p className="text-center text-xs text-muted-foreground">
-                  Select an end date, or click Next to use a single day.
-                </p>
-              ) : null}
             </>
           )}
 
           {step === "notes" && range?.from && (
             <>
-              <DialogHeader>
-                <DialogTitle>Any notes?</DialogTitle>
+              <DialogHeader className="gap-2">
+                <p className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
+                  Step 2 of 2 · Details
+                </p>
+                <DialogTitle>Add notes (optional)</DialogTitle>
                 <DialogDescription>
-                  Optional — links, context, or how you&apos;ll know it&apos;s done.
+                  Links, checklist, or context — skip if the title is enough.
                 </DialogDescription>
               </DialogHeader>
-              <div className="space-y-2">
-                <Label htmlFor={`${formId}-notes`} className="sr-only">
+              <PlanContextSummary titleText={title.trim()} space={activeSpace} variant={variant} />
+              <div className="space-y-1.5">
+                <Label htmlFor={`${formId}-notes`} className="text-xs text-muted-foreground">
                   Notes
                 </Label>
                 <Textarea
@@ -244,16 +319,17 @@ export function PlanCapture({
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="Links, checklist, context…"
-                  rows={4}
-                  className="resize-none"
+                  rows={3}
+                  className="min-h-[5.5rem] resize-none"
                 />
               </div>
-              <DialogFooter>
-                <Button type="button" variant="ghost" onClick={() => setStep("range")}>
+              <DialogFooter className="gap-2">
+                <Button type="button" variant="ghost" size="sm" onClick={() => setStep("range")}>
                   Back
                 </Button>
                 <Button
                   type="button"
+                  size="sm"
                   disabled={createMut.isPending}
                   onClick={() => createMut.mutate()}
                 >

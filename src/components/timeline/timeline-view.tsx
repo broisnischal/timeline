@@ -66,6 +66,9 @@ function isTodayDay(day: string) {
   return day === k;
 }
 
+/** Matches TimelineFeedRow / spine at left-5 (center of 2.5rem rail). */
+const DAY_GRID = "grid grid-cols-[2.5rem_3px_minmax(0,1fr)] gap-x-3 sm:gap-x-4";
+
 export function TimelineView({
   tasks,
   search,
@@ -91,21 +94,32 @@ export function TimelineView({
   return (
     <div className="space-y-12">
       {overdue.length > 0 ? (
-        <section className="space-y-3">
-          <div className="flex items-center gap-3">
-            <h2 className="shrink-0 text-xs font-semibold tracking-wider text-destructive uppercase">
-              Overdue
-            </h2>
-            <div className="h-px min-w-0 flex-1 bg-border/70" aria-hidden />
-            <span className="shrink-0 text-[11px] text-muted-foreground tabular-nums">
-              {overdue.length}
-            </span>
-          </div>
-          <div className="relative">
-            <div
-              className="absolute top-8 bottom-4 left-[19px] w-px bg-border/80 max-sm:hidden"
-              aria-hidden
-            />
+        <section className="relative">
+          <div
+            className="pointer-events-none absolute top-0 bottom-0 left-5 z-0 w-px bg-border/70 max-sm:hidden"
+            aria-hidden
+          />
+          <div className="relative z-[1]">
+            <div className={cn(DAY_GRID, "items-stretch pb-3")}>
+              <div className="flex items-center justify-center">
+                <span
+                  className="flex size-5 items-center justify-center rounded-full border border-background bg-destructive/10 text-[10px] font-bold text-destructive ring-1 ring-destructive/25"
+                  aria-hidden
+                >
+                  !
+                </span>
+              </div>
+              <div className="w-[3px] rounded-full bg-destructive/35" aria-hidden />
+              <div className="flex min-w-0 items-center gap-3">
+                <h2 className="shrink-0 text-xs font-semibold tracking-wider text-destructive uppercase">
+                  Overdue
+                </h2>
+                <div className="h-px min-w-0 flex-1 bg-border/70" aria-hidden />
+                <span className="shrink-0 text-[11px] text-muted-foreground tabular-nums">
+                  {overdue.length}
+                </span>
+              </div>
+            </div>
             <ul className="divide-y divide-border/50">
               {overdue.map((row) => (
                 <li key={row.id} className="py-5 first:pt-0 last:pb-0">
@@ -127,29 +141,46 @@ export function TimelineView({
           {grouped.map(([day, dayTasks]) => {
             const today = isTodayDay(day);
             const sorted = [...dayTasks].sort((a, b) => anchor(a).getTime() - anchor(b).getTime());
+            const dayNum = parseLocalDay(day).getDate();
             return (
-              <section key={day} className="space-y-3">
-                <div className="flex items-baseline gap-3">
-                  <h2
-                    className={cn(
-                      "shrink-0 text-sm font-medium tracking-tight tabular-nums",
-                      today ? "text-foreground" : "text-foreground/90",
-                    )}
-                  >
-                    {dateHeadingFmt.format(parseLocalDay(day))}
-                  </h2>
-                  <div className="h-px min-w-0 flex-1 translate-y-px bg-border/70" aria-hidden />
-                  {today ? (
-                    <span className="shrink-0 text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
-                      Today
-                    </span>
-                  ) : null}
-                </div>
-                <div className="relative">
-                  <div
-                    className="absolute top-8 bottom-4 left-[19px] w-px bg-border/80 max-sm:hidden"
-                    aria-hidden
-                  />
+              <section key={day} className="relative">
+                <div
+                  className="pointer-events-none absolute top-0 bottom-0 left-5 z-0 w-px bg-border/70 max-sm:hidden"
+                  aria-hidden
+                />
+                <div className="relative z-[1]">
+                  <div className={cn(DAY_GRID, "items-stretch pb-3")}>
+                    <div className="flex items-center justify-center">
+                      <span
+                        className={cn(
+                          "flex size-5 items-center justify-center rounded-full border border-background text-[10px] font-semibold tabular-nums ring-1 ring-border/45",
+                          today
+                            ? "bg-primary/12 text-primary ring-primary/30"
+                            : "bg-muted/50 text-muted-foreground",
+                        )}
+                        aria-hidden
+                      >
+                        {dayNum}
+                      </span>
+                    </div>
+                    <div className="w-[3px] self-stretch rounded-full bg-border/60" aria-hidden />
+                    <div className="flex min-w-0 items-center gap-3">
+                      <h2
+                        className={cn(
+                          "min-w-0 truncate text-sm font-medium tracking-tight tabular-nums",
+                          today ? "text-foreground" : "text-foreground/90",
+                        )}
+                      >
+                        {dateHeadingFmt.format(parseLocalDay(day))}
+                      </h2>
+                      <div className="h-px min-w-0 flex-1 bg-border/70" aria-hidden />
+                      {today ? (
+                        <span className="shrink-0 text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
+                          Today
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
                   <ul className="divide-y divide-border/50">
                     {sorted.map((row) => (
                       <li key={row.id} className="py-5 first:pt-0 last:pb-0">
