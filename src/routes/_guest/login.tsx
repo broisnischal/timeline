@@ -1,7 +1,7 @@
 import { SiGithub, SiGoogle } from "@icons-pack/react-simple-icons";
 import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { GalleryVerticalEndIcon, LoaderCircleIcon } from "lucide-react";
+import { CalendarDaysIcon, LoaderCircleIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import { SignInSocialButton } from "@/components/sign-in-social-button";
@@ -58,11 +58,11 @@ function LoginForm() {
           <div className="flex flex-col items-center gap-2">
             <Link to="/" className="flex flex-col items-center gap-2 font-medium">
               <div className="flex h-8 w-8 items-center justify-center rounded-md">
-                <GalleryVerticalEndIcon className="size-6" />
+                <CalendarDaysIcon className="size-6" />
               </div>
-              <span className="sr-only">Acme Inc.</span>
+              <span className="sr-only">Timeline</span>
             </Link>
-            <h1 className="text-xl font-bold">Welcome back to Acme Inc.</h1>
+            <h1 className="text-xl font-bold">Welcome back to Timeline</h1>
           </div>
           <div className="flex flex-col gap-5">
             <div className="grid gap-2">

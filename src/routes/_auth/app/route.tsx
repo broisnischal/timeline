@@ -96,15 +96,16 @@ function AppLayout() {
 
   return (
     <div className="min-h-svh bg-background">
-      <header className="sticky top-0 z-40 border-b border-border/40 bg-background/90 backdrop-blur-md supports-[backdrop-filter]:bg-background/75">
+      <header className="relative z-40 border-b border-border/40 bg-background/90 backdrop-blur-md supports-[backdrop-filter]:bg-background/75">
         <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 px-4 py-2.5 sm:gap-4">
           <div className="flex min-w-0 flex-1 items-center gap-2.5 sm:gap-3">
             <Link
               to="/app"
               search={search}
-              className="shrink-0 text-sm font-semibold tracking-tight text-foreground transition-opacity hover:opacity-85 sm:text-base"
+              className="inline-flex shrink-0 items-center gap-1.5 text-sm font-semibold tracking-tight text-foreground transition-opacity hover:opacity-85 sm:text-base"
             >
-              Timeline
+              <CalendarDaysIcon className="size-4 opacity-80" aria-hidden />
+              <span>Timeline</span>
             </Link>
             <div className="max-w-[min(100%,13rem)] min-w-0 flex-1 sm:max-w-[15rem]">
               <AppSpaceDropdown />
@@ -131,18 +132,6 @@ function AppLayout() {
               <span className="hidden sm:inline">Home</span>
             </Link>
             <Link
-              to="/app/focus"
-              search={search}
-              aria-label="Focus"
-              className={cn(
-                "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-sm transition-[color,background-color,box-shadow] duration-200 ease-out sm:px-3",
-                "text-muted-foreground hover:text-foreground",
-              )}
-            >
-              <FocusIcon className="size-3.5 shrink-0 opacity-70" aria-hidden />
-              <span className="hidden sm:inline">Focus</span>
-            </Link>
-            <Link
               to="/app/timeline"
               search={search}
               aria-current={isTimeline ? "page" : undefined}
@@ -159,7 +148,22 @@ function AppLayout() {
             </Link>
           </nav>
 
-          <div className="flex shrink-0 items-center">
+          <div className="flex shrink-0 items-center gap-1.5">
+            <Link
+              to="/app/focus"
+              search={search}
+              aria-current={isFocus ? "page" : undefined}
+              aria-label="Focus"
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-sm transition-[color,background-color,box-shadow] duration-200 ease-out sm:px-3",
+                isFocus
+                  ? "bg-background text-foreground shadow-sm ring-1 ring-border/55"
+                  : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+              )}
+            >
+              <FocusIcon className="size-3.5 shrink-0 opacity-70" aria-hidden />
+              <span className="hidden sm:inline">Focus</span>
+            </Link>
             <AppUserMenu />
           </div>
         </div>

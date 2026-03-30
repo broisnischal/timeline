@@ -33,7 +33,7 @@ function PublicListPage() {
         <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
           <div className="absolute -top-48 left-1/2 h-[min(70vh,520px)] w-[min(120vw,900px)] -translate-x-1/2 rounded-[100%] bg-[radial-gradient(ellipse_at_center,oklch(0.55_0.12_264/0.14),transparent_65%)] dark:bg-[radial-gradient(ellipse_at_center,oklch(0.55_0.14_264/0.22),transparent_65%)]" />
         </div>
-        <header className="sticky top-0 z-40 border-b border-border/40 bg-background/75 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
+        <header className="z-40 border-b border-border/40 bg-background/75 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
           <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
             <Link
               to="/"

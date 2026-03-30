@@ -33,5 +33,8 @@
   "oxc.enable": true,
 
   // set oxfmt as default formatter
-  "editor.defaultFormatter": "oxc.oxc-vscode"
+  "editor.defaultFormatter": "oxc.oxc-vscode",
+  "[jsonc]": {
+    "editor.defaultFormatter": "vscode.json-language-features"
+  }
 }

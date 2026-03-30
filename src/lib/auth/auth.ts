@@ -23,7 +23,8 @@ export const auth = betterAuth({
   // https://www.better-auth.com/docs/concepts/session-management#session-caching
   session: {
     cookieCache: {
-      enabled: true,
+      // Keep disabled to avoid oversized Set-Cookie headers when user profile payload grows.
+      enabled: false,
       maxAge: 5 * 60, // 5 minutes
     },
   },

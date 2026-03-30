@@ -26,6 +26,7 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useAuth } from "@/lib/auth/hooks";
 import { signOutSession } from "@/lib/auth/sign-out";
 import { SITE_GITHUB_URL } from "@/lib/site";
 
@@ -36,6 +37,7 @@ export function AppUserMenu() {
   const router = useRouter();
   const search = appRouteApi.useSearch();
   const { theme, setTheme } = useTheme();
+  const { user } = useAuth();
 
   return (
     <DropdownMenu>
@@ -44,12 +46,20 @@ export function AppUserMenu() {
           <Button
             variant="outline"
             size="icon-sm"
-            className="rounded-full"
+            className="rounded-full border-border/60 bg-background/90 transition-[background-color,border-color] hover:border-border hover:bg-muted/40"
             aria-label="Settings and account"
           />
         }
       >
-        <SettingsIcon className="size-4" />
+        {user?.image ? (
+          <img
+            src={user.image}
+            alt={`${user.name ?? "User"} profile`}
+            className="size-6 rounded-full object-cover"
+          />
+        ) : (
+          <SettingsIcon className="size-4 text-muted-foreground" />
+        )}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-60">
         <DropdownMenuGroup>

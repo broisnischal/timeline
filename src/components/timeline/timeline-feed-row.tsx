@@ -100,7 +100,7 @@ export function TimelineFeedRow({ row, search, onToggleDone, togglePending }: Pr
               disabled={togglePending}
               onCheckedChange={() => onToggleDone(row.id)}
               onClick={(e) => e.stopPropagation()}
-              className="mt-0.5 size-4 shrink-0 data-[disabled]:opacity-60"
+              className="mt-0.5 size-4 shrink-0 data-disabled:opacity-60"
               aria-label={done ? "Mark as todo" : "Mark done"}
             />
           ) : null}
@@ -146,11 +146,6 @@ export function TimelineFeedRow({ row, search, onToggleDone, togglePending }: Pr
               </time>
               {badge === "overdue" ? (
                 <span className="text-[10px] font-medium text-destructive">Overdue</span>
-              ) : null}
-              {badge === "soon" ? (
-                <span className="text-[10px] font-medium text-amber-800 dark:text-amber-400">
-                  Soon
-                </span>
               ) : null}
               {row.isPublic ? (
                 <span className="text-[10px] text-muted-foreground uppercase">Public</span>

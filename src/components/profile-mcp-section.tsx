@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CopyIcon, KeyRoundIcon, Loader2Icon } from "lucide-react";
+import { CopyIcon, EyeIcon, EyeOffIcon, KeyRoundIcon, Loader2Icon } from "lucide-react";
 import { memo, useCallback, useState } from "react";
 import { toast } from "sonner";
 
@@ -189,6 +189,7 @@ export const ProfileMcpSection = memo(function ProfileMcpSection() {
   const qc = useQueryClient();
   const { data, isPending } = useQuery(mcpAccessQueryOptions());
   const [revealedKey, setRevealedKey] = useState<string | null>(null);
+  const [showFingerprint, setShowFingerprint] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
 
   const setMcpCache = useCallback(
@@ -268,9 +269,8 @@ export const ProfileMcpSection = memo(function ProfileMcpSection() {
 
   if (isPending) {
     return (
-      <section className="relative overflow-hidden rounded-xl border border-border/70 bg-card text-card-foreground shadow-sm">
-        <div className="absolute inset-y-0 left-0 w-[3px] bg-primary/80" aria-hidden />
-        <div className="flex items-center gap-2 px-5 py-6 pl-6 text-sm text-muted-foreground">
+      <section className="space-y-4 border-t border-border/60 pt-6">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Loader2Icon className="size-4 shrink-0 animate-spin" aria-hidden />
           Loading…
         </div>
@@ -282,150 +282,161 @@ export const ProfileMcpSection = memo(function ProfileMcpSection() {
     <>
       <McpSetupGuide open={guideOpen} onOpenChange={setGuideOpen} />
 
-      <section className="relative overflow-hidden rounded-xl border border-border/70 bg-card text-card-foreground shadow-sm">
-        <div className="absolute inset-y-0 left-0 w-[3px] bg-primary/80" aria-hidden />
-
-        <div className="px-5 py-5 pl-6">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
-            <div className="min-w-0 space-y-2">
-              <div className="flex flex-wrap items-center gap-2">
-                <h2 className="text-lg font-semibold tracking-tight text-foreground">MCP</h2>
-                {busy ? (
-                  <Loader2Icon
-                    className="size-4 shrink-0 animate-spin text-muted-foreground"
-                    aria-hidden
-                  />
-                ) : null}
-              </div>
-              <p className="max-w-prose text-sm leading-relaxed text-muted-foreground">
-                Cursor: MCP URL + Bearer token. Open the guide for the JSON snippet.
-              </p>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="mt-1 h-8 rounded-lg border-dashed"
-                onClick={() => setGuideOpen(true)}
-              >
-                How to use
-              </Button>
-            </div>
-
-            <div className="flex shrink-0 items-center gap-3 rounded-lg border border-border/50 bg-muted/15 px-3 py-2 sm:flex-col sm:items-end sm:py-3">
-              <Label htmlFor="mcp-enabled" className="text-sm font-medium sm:sr-only">
-                Access
-              </Label>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground sm:hidden">Off / on</span>
-                <Switch
-                  id="mcp-enabled"
-                  checked={enabled}
-                  disabled={busy}
-                  onCheckedChange={(on) => {
-                    if (on) {
-                      void enableMut.mutateAsync();
-                    } else {
-                      if (
-                        typeof window !== "undefined" &&
-                        !window.confirm("Turn off MCP? Existing clients will stop working.")
-                      ) {
-                        return;
-                      }
-                      void revokeMut.mutateAsync();
-                    }
-                  }}
+      <section className="space-y-5 border-t border-border/60 pt-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
+          <div className="min-w-0 space-y-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="text-sm font-semibold tracking-tight text-foreground">MCP</h2>
+              {busy ? (
+                <Loader2Icon
+                  className="size-4 shrink-0 animate-spin text-muted-foreground"
+                  aria-hidden
                 />
-              </div>
-            </div>
-          </div>
-
-          {enabled ? (
-            <div className="mt-6 space-y-3 border-t border-border/50 pt-6">
-              <CopyRow
-                label="MCP stream (Cursor)"
-                value={mcpStreamUrl}
-                copyLabel="Copy MCP stream URL"
-              />
-
-              <CopyRow label="REST API base" value={apiBase} copyLabel="Copy REST API base URL" />
-
-              <CopyRow
-                label="Auth header"
-                value={bearerExample}
-                copyLabel="Copy Authorization header pattern"
-              />
-
-              {data?.keyPrefix ? (
-                <div className="space-y-2">
-                  <CopyRow
-                    label="Key fingerprint"
-                    value={data.keyPrefix}
-                    copyLabel="Copy fingerprint"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Matches the active secret. The full token is not stored here — only shown once
-                    in the box below after you turn access on or rotate.
-                  </p>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    className="h-8 gap-1.5 rounded-lg"
-                    disabled={busy}
-                    onClick={() => void rotateMut.mutateAsync()}
-                  >
-                    <KeyRoundIcon className="size-3.5" />
-                    Rotate secret
-                  </Button>
-                </div>
               ) : null}
             </div>
-          ) : null}
+            <p className="max-w-prose text-sm leading-relaxed text-muted-foreground">
+              Cursor: MCP URL + Bearer token. Open the guide for the JSON snippet.
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="mt-1 h-8 rounded-lg border-dashed"
+              onClick={() => setGuideOpen(true)}
+            >
+              How to use
+            </Button>
+          </div>
 
-          {revealedKey ? (
-            <div className="mt-6 space-y-3 border-t border-dashed border-amber-500/40 pt-6">
-              <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <p className="text-sm font-medium text-amber-950 dark:text-amber-100">
-                  Secret token
-                </p>
-                <span className="text-[11px] text-amber-800/80 dark:text-amber-200/75">
-                  Copy now — won’t repeat
-                </span>
-              </div>
-              <div className="overflow-hidden rounded-lg border border-amber-500/35 bg-amber-500/[0.07] dark:border-amber-500/30 dark:bg-amber-950/25">
-                <div className="flex items-stretch">
-                  <p className="min-w-0 flex-1 px-3 py-3 font-mono text-[13px] leading-relaxed break-all text-amber-950 dark:text-amber-50">
-                    {revealedKey}
-                  </p>
+          <div className="flex shrink-0 items-center gap-3 rounded-lg border border-border/50 bg-muted/15 px-3 py-2 sm:flex-col sm:items-end sm:py-3">
+            <Label htmlFor="mcp-enabled" className="text-sm font-medium sm:sr-only">
+              Access
+            </Label>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground sm:hidden">Off / on</span>
+              <Switch
+                id="mcp-enabled"
+                checked={enabled}
+                disabled={busy}
+                onCheckedChange={(on) => {
+                  if (on) {
+                    void enableMut.mutateAsync();
+                  } else {
+                    if (
+                      typeof window !== "undefined" &&
+                      !window.confirm("Turn off MCP? Existing clients will stop working.")
+                    ) {
+                      return;
+                    }
+                    void revokeMut.mutateAsync();
+                  }
+                }}
+              />
+            </div>
+          </div>
+        </div>
+
+        {enabled ? (
+          <div className="space-y-3 border-t border-border/50 pt-6">
+            <CopyRow
+              label="MCP stream (Cursor)"
+              value={mcpStreamUrl}
+              copyLabel="Copy MCP stream URL"
+            />
+
+            <CopyRow label="REST API base" value={apiBase} copyLabel="Copy REST API base URL" />
+
+            <CopyRow
+              label="Auth header"
+              value={bearerExample}
+              copyLabel="Copy Authorization header pattern"
+            />
+
+            {data?.keyPrefix ? (
+              <div className="space-y-2">
+                <div className="flex items-stretch overflow-hidden rounded-lg border border-border/80 bg-muted/25 dark:bg-muted/20">
+                  <div className="min-w-0 flex-1 px-3 py-2.5">
+                    <p className="text-[10px] font-medium tracking-[0.12em] text-muted-foreground uppercase">
+                      Key fingerprint
+                    </p>
+                    <p className="mt-1 font-mono text-[13px] leading-snug break-all text-foreground">
+                      {showFingerprint ? data.keyPrefix : "••••••••••••••••"}
+                    </p>
+                  </div>
                   <button
                     type="button"
-                    onClick={async () => {
-                      try {
-                        await navigator.clipboard.writeText(revealedKey);
-                        toast.success("Copied");
-                      } catch {
-                        toast.error("Could not copy");
-                      }
-                    }}
-                    aria-label="Copy secret token"
-                    className="flex w-11 shrink-0 items-center justify-center border-l border-amber-500/30 bg-amber-500/10 text-amber-900 transition-colors hover:bg-amber-500/20 dark:text-amber-100"
+                    onClick={() => setShowFingerprint((v) => !v)}
+                    aria-label={showFingerprint ? "Hide fingerprint" : "Show fingerprint"}
+                    className="flex w-11 shrink-0 items-center justify-center border-l border-border/60 bg-muted/40 text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground"
                   >
-                    <CopyIcon className="size-4" />
+                    {showFingerprint ? (
+                      <EyeOffIcon className="size-4" />
+                    ) : (
+                      <EyeIcon className="size-4" />
+                    )}
                   </button>
                 </div>
+                <p className="text-xs text-muted-foreground">
+                  Matches the active secret. The full token is not stored here — only shown once in
+                  the box below after you turn access on or rotate.
+                </p>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="h-8 gap-1.5 rounded-lg"
+                  disabled={busy}
+                  onClick={() => void rotateMut.mutateAsync()}
+                >
+                  <KeyRoundIcon className="size-3.5" />
+                  Rotate secret
+                </Button>
               </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="h-8 px-2 text-xs text-muted-foreground"
-                onClick={() => setRevealedKey(null)}
-              >
-                Hide
-              </Button>
+            ) : null}
+          </div>
+        ) : null}
+
+        {revealedKey ? (
+          <div className="space-y-3 border-t border-dashed border-amber-500/40 pt-6">
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <p className="text-sm font-medium text-amber-950 dark:text-amber-100">Secret token</p>
+              <span className="text-[11px] text-amber-800/80 dark:text-amber-200/75">
+                Copy now — won’t repeat
+              </span>
             </div>
-          ) : null}
-        </div>
+            <div className="overflow-hidden rounded-lg border border-amber-500/35 bg-amber-500/[0.07] dark:border-amber-500/30 dark:bg-amber-950/25">
+              <div className="flex items-stretch">
+                <p className="min-w-0 flex-1 px-3 py-3 font-mono text-[13px] leading-relaxed break-all text-amber-950 dark:text-amber-50">
+                  {revealedKey}
+                </p>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(revealedKey);
+                      toast.success("Copied");
+                    } catch {
+                      toast.error("Could not copy");
+                    }
+                  }}
+                  aria-label="Copy secret token"
+                  className="flex w-11 shrink-0 items-center justify-center border-l border-amber-500/30 bg-amber-500/10 text-amber-900 transition-colors hover:bg-amber-500/20 dark:text-amber-100"
+                >
+                  <CopyIcon className="size-4" />
+                </button>
+              </div>
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-8 px-2 text-xs text-muted-foreground"
+              onClick={() => setRevealedKey(null)}
+            >
+              Hide
+            </Button>
+          </div>
+        ) : null}
       </section>
     </>
   );

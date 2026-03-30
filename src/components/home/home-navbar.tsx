@@ -41,8 +41,8 @@ export function HomeNavbar({
   const currentName = activeSpaceRow?.name ?? "Space";
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border/50 bg-background/90 backdrop-blur-md supports-[backdrop-filter]:bg-background/75">
-      <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-3 sm:gap-4">
+    <header className="relative z-40 border-b border-border/50 bg-background/90 backdrop-blur-md supports-[backdrop-filter]:bg-background/75">
+      <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 px-4 py-3 sm:gap-4">
         <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-4">
           <Link
             to="/"

@@ -1,6 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRightIcon, BookmarkIcon, FolderIcon, SparklesIcon, TimerIcon } from "lucide-react";
+import {
+  ArrowRightIcon,
+  CalendarDaysIcon,
+  CheckCircle2Icon,
+  CpuIcon,
+  FocusIcon,
+  FolderIcon,
+  GlobeIcon,
+  SparklesIcon,
+} from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 
 import { HomeNavbar } from "@/components/home/home-navbar";
@@ -63,7 +72,7 @@ function HomePage() {
         onSpaceChange={handleSpaceChange}
       />
 
-      <main className="mx-auto max-w-5xl px-4 pt-12 pb-24">
+      <main className="mx-auto max-w-3xl px-4 pt-12 pb-24">
         <div className="mx-auto max-w-2xl text-center">
           <p className="mb-4 inline-flex items-center gap-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">
             <SparklesIcon className="size-3.5" />
@@ -73,7 +82,8 @@ function HomePage() {
             Organize what you will do.
           </h1>
           <p className="mx-auto mt-5 max-w-lg text-lg leading-relaxed text-muted-foreground">
-            Add a plan in one line. Pick a date range, drop a note, and you&apos;re done.
+            Quickly add plans in a single line and let AI organize your tasks always know what's
+            next and stay on track.
           </p>
         </div>
 
@@ -131,39 +141,73 @@ function HomePage() {
           )}
         </div>
 
-        <ul className="mx-auto mt-20 grid max-w-4xl gap-6 sm:grid-cols-2">
-          {[
-            {
-              icon: FolderIcon,
-              title: "Folders, not noise",
-              body: "Group work like bookmarks — blog, reading, deep work — without a heavy project system.",
-            },
-            {
-              icon: TimerIcon,
-              title: "Time-aware",
-              body: "Start and due windows so your timeline reflects real intent, not just titles.",
-            },
-            {
-              icon: BookmarkIcon,
-              title: "Outcomes",
-              body: "Capture what shipped when it is done. Your timeline doubles as a lightweight log.",
-            },
-            {
-              icon: SparklesIcon,
-              title: "Built for what is next",
-              body: "Calendar sync, desktop surfaces, and MCP hooks fit naturally on this foundation.",
-            },
-          ].map((item) => (
-            <li
-              key={item.title}
-              className="rounded-2xl bg-card/40 p-6 ring-1 ring-foreground/8 backdrop-blur-sm"
-            >
-              <item.icon className="mb-3 size-5 text-foreground/80" aria-hidden />
-              <h2 className="font-medium tracking-tight">{item.title}</h2>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{item.body}</p>
-            </li>
-          ))}
-        </ul>
+        <section className="mx-auto mt-20 max-w-3xl">
+          <div className="mb-6 text-center">
+            <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+              Available now
+            </p>
+            <h2 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
+              Everything you need to plan and ship
+            </h2>
+          </div>
+          <ul className="grid gap-4 sm:grid-cols-2">
+            {[
+              {
+                icon: FolderIcon,
+                title: "Spaces",
+                body: "Keep personal, work, and side projects separated with quick space switching.",
+              },
+              {
+                icon: CalendarDaysIcon,
+                title: "Timeline ranges",
+                body: "Browse one week to one year views and keep your schedule grounded in real dates.",
+              },
+              {
+                icon: FocusIcon,
+                title: "Focus mode",
+                body: "Jump into a calmer view for what matters now, including activity logs and progress.",
+              },
+              {
+                icon: CheckCircle2Icon,
+                title: "Outcomes",
+                body: "Record what shipped so tasks become a lightweight history, not just a checklist.",
+              },
+              {
+                icon: GlobeIcon,
+                title: "Public timeline",
+                body: "Share selected work on your own public page and expose a clean JSON endpoint.",
+              },
+              {
+                icon: CpuIcon,
+                title: "MCP ready",
+                body: "Connect tools and automations through MCP settings directly from your profile.",
+              },
+            ].map((item) => (
+              <li
+                key={item.title}
+                className="rounded-2xl border border-border/60 bg-card/35 p-5 backdrop-blur-sm"
+              >
+                <item.icon className="mb-3 size-5 text-foreground/80" aria-hidden />
+                <h3 className="font-medium tracking-tight">{item.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{item.body}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <footer className="mx-auto mt-16 max-w-3xl border-t border-border/50 py-6">
+          <div className="flex flex-col items-center justify-between gap-3 text-xs text-muted-foreground sm:flex-row">
+            <p>Built with Timeline for calm planning.</p>
+            <div className="flex items-center gap-4">
+              <Link to="/login" className="transition-colors hover:text-foreground">
+                Log in
+              </Link>
+              <Link to="/signup" className="transition-colors hover:text-foreground">
+                Sign up
+              </Link>
+            </div>
+          </div>
+        </footer>
       </main>
     </div>
   );

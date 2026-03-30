@@ -133,7 +133,7 @@ export function PublicTimelinePage({ data }: { readonly data: PublicPageData }) 
         />
       </div>
 
-      <header className="sticky top-0 z-40 border-b border-border/40 bg-background/75 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
+      <header className="z-40 border-b border-border/40 bg-background/75 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
         <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <Link
             to="/"
