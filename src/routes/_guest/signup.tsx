@@ -136,8 +136,7 @@ function SignupForm() {
             <SignInSocialButton
               provider="google"
               callbackURL={redirectUrl}
-              // disabled={isPending}
-              disabled={true} // TODO disabled just for the preview deployment at https://tanstarter.mugnavo.com
+              disabled={isPending}
               icon={<SiGoogle className="size-4" />}
             />
           </div>
