@@ -22,6 +22,7 @@ import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as AuthAppTimelineRouteImport } from './routes/_auth/app/timeline'
 import { Route as AuthAppProfileRouteImport } from './routes/_auth/app/profile'
 import { Route as AuthAppAboutRouteImport } from './routes/_auth/app/about'
+import { Route as AuthAppTasksTaskIdRouteImport } from './routes/_auth/app/tasks.$taskId'
 
 const GuestRouteRoute = GuestRouteRouteImport.update({
   id: '/_guest',
@@ -86,6 +87,11 @@ const AuthAppAboutRoute = AuthAppAboutRouteImport.update({
   path: '/about',
   getParentRoute: () => AuthAppRouteRoute,
 } as any)
+const AuthAppTasksTaskIdRoute = AuthAppTasksTaskIdRouteImport.update({
+  id: '/tasks/$taskId',
+  path: '/tasks/$taskId',
+  getParentRoute: () => AuthAppRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -99,6 +105,7 @@ export interface FileRoutesByFullPath {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/public/$slug': typeof ApiPublicSlugRoute
   '/app/': typeof AuthAppIndexRoute
+  '/app/tasks/$taskId': typeof AuthAppTasksTaskIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -111,6 +118,7 @@ export interface FileRoutesByTo {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/public/$slug': typeof ApiPublicSlugRoute
   '/app': typeof AuthAppIndexRoute
+  '/app/tasks/$taskId': typeof AuthAppTasksTaskIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -127,6 +135,7 @@ export interface FileRoutesById {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/public/$slug': typeof ApiPublicSlugRoute
   '/_auth/app/': typeof AuthAppIndexRoute
+  '/_auth/app/tasks/$taskId': typeof AuthAppTasksTaskIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -142,6 +151,7 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/public/$slug'
     | '/app/'
+    | '/app/tasks/$taskId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -154,6 +164,7 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/public/$slug'
     | '/app'
+    | '/app/tasks/$taskId'
   id:
     | '__root__'
     | '/'
@@ -169,6 +180,7 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/public/$slug'
     | '/_auth/app/'
+    | '/_auth/app/tasks/$taskId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -273,6 +285,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthAppAboutRouteImport
       parentRoute: typeof AuthAppRouteRoute
     }
+    '/_auth/app/tasks/$taskId': {
+      id: '/_auth/app/tasks/$taskId'
+      path: '/tasks/$taskId'
+      fullPath: '/app/tasks/$taskId'
+      preLoaderRoute: typeof AuthAppTasksTaskIdRouteImport
+      parentRoute: typeof AuthAppRouteRoute
+    }
   }
 }
 
@@ -281,6 +300,7 @@ interface AuthAppRouteRouteChildren {
   AuthAppProfileRoute: typeof AuthAppProfileRoute
   AuthAppTimelineRoute: typeof AuthAppTimelineRoute
   AuthAppIndexRoute: typeof AuthAppIndexRoute
+  AuthAppTasksTaskIdRoute: typeof AuthAppTasksTaskIdRoute
 }
 
 const AuthAppRouteRouteChildren: AuthAppRouteRouteChildren = {
@@ -288,6 +308,7 @@ const AuthAppRouteRouteChildren: AuthAppRouteRouteChildren = {
   AuthAppProfileRoute: AuthAppProfileRoute,
   AuthAppTimelineRoute: AuthAppTimelineRoute,
   AuthAppIndexRoute: AuthAppIndexRoute,
+  AuthAppTasksTaskIdRoute: AuthAppTasksTaskIdRoute,
 }
 
 const AuthAppRouteRouteWithChildren = AuthAppRouteRoute._addFileChildren(

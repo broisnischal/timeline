@@ -33,6 +33,12 @@ export const listTasksSchema = z.object({
   to: z.string().optional(),
 });
 
+export const taskSubtaskSchema = z.object({
+  id: z.string(),
+  title: z.string().min(1).max(500),
+  done: z.boolean(),
+});
+
 export const createTaskSchema = z.object({
   spaceId: z.string(),
   title: z.string().min(1).max(500),
@@ -42,6 +48,12 @@ export const createTaskSchema = z.object({
   dueAt: z.string().optional(),
   durationMinutes: z.number().int().min(0).max(10080).optional(),
   isPublic: z.boolean().optional(),
+  icon: z.string().max(16).optional(),
+  accentColor: z
+    .string()
+    .max(32)
+    .refine((s) => s === "" || /^#[0-9A-Fa-f]{6}$/.test(s), "Use a hex color like #6366f1")
+    .optional(),
 });
 
 export const updateTaskSchema = z.object({
@@ -55,10 +67,22 @@ export const updateTaskSchema = z.object({
   status: z.enum(["todo", "done", "cancelled"]).optional(),
   isPublic: z.boolean().optional(),
   spaceId: z.string().optional(),
+  icon: z.string().max(16).nullable().optional(),
+  accentColor: z.string().max(32).nullable().optional(),
+  subtasks: z.array(taskSubtaskSchema).optional(),
+});
+
+export const appendTaskActivitySchema = z.object({
+  taskId: z.string(),
+  body: z.string().min(1).max(5000),
 });
 
 export const taskIdSchema = z.object({
   id: z.string(),
+});
+
+export const getTaskParamsSchema = z.object({
+  taskId: z.string().min(1),
 });
 
 export const updatePublicProfileSchema = z.object({

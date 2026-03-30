@@ -3,6 +3,7 @@ import { queryOptions } from "@tanstack/react-query";
 import {
   $getPublicProfile,
   $getStreakStats,
+  $getTask,
   $getYearActivityGrid,
   $listSpaces,
   $listTasks,
@@ -36,4 +37,10 @@ export const tasksQueryOptions = (filters: { spaceId?: string; from?: string; to
   queryOptions({
     queryKey: ["tasks", filters] as const,
     queryFn: ({ signal }) => $listTasks({ data: filters, signal }),
+  });
+
+export const taskQueryOptions = (taskId: string) =>
+  queryOptions({
+    queryKey: ["task", taskId] as const,
+    queryFn: ({ signal }) => $getTask({ data: { taskId }, signal }),
   });

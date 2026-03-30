@@ -118,6 +118,56 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+@layer utilities {
+  .timeline-shimmer-bg {
+    position: relative;
+    overflow: hidden;
+  }
+  .timeline-shimmer-bg::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(
+      90deg,
+      transparent,
+      oklch(1 0 0 / 22%) 40%,
+      oklch(1 0 0 / 35%) 50%,
+      oklch(1 0 0 / 22%) 60%,
+      transparent
+    );
+    animation: timeline-shimmer 1.35s ease-in-out infinite;
+  }
+  .dark .timeline-shimmer-bg::after {
+    background: linear-gradient(
+      90deg,
+      transparent,
+      oklch(1 0 0 / 6%) 40%,
+      oklch(1 0 0 / 12%) 50%,
+      oklch(1 0 0 / 6%) 60%,
+      transparent
+    );
+  }
+  .timeline-bar-indeterminate {
+    animation: timeline-bar-indeterminate 1.05s ease-in-out infinite;
+  }
+}
+
+@keyframes timeline-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes timeline-bar-indeterminate {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(400%);
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

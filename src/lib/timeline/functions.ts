@@ -4,10 +4,12 @@ import { authMiddleware, freshAuthMiddleware } from "@/lib/auth/middleware";
 
 import { rpcSafe } from "./rpc-safe";
 import {
+  appendTaskActivitySchema,
   createSpaceSchema,
   createTaskSchema,
   deleteSpaceSchema,
   emptyObjectSchema,
+  getTaskParamsSchema,
   listTasksSchema,
   publicSlugParamSchema,
   taskIdSchema,
@@ -65,6 +67,15 @@ export const $listTasks = createServerFn({ method: "GET" })
     return rpcSafe(await listTasksForUser(context.user.id, data));
   });
 
+export const $getTask = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
+  .inputValidator((d: unknown) => getTaskParamsSchema.parse(d ?? {}))
+  .handler(async ({ context, data }) => {
+    const { getTaskByIdForUser } = await import("./repo.server");
+    const row = await getTaskByIdForUser(context.user.id, data.taskId);
+    return row ? rpcSafe(row) : null;
+  });
+
 export const $createTask = createServerFn({ method: "POST" })
   .middleware([freshAuthMiddleware])
   .inputValidator((d: unknown) => createTaskSchema.parse(d))
@@ -79,6 +90,14 @@ export const $updateTask = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const { updateTaskRow } = await import("./repo.server");
     return rpcSafe(await updateTaskRow(context.user.id, data));
+  });
+
+export const $appendTaskActivity = createServerFn({ method: "POST" })
+  .middleware([freshAuthMiddleware])
+  .inputValidator((d: unknown) => appendTaskActivitySchema.parse(d))
+  .handler(async ({ context, data }) => {
+    const { appendTaskActivityRow } = await import("./repo.server");
+    return rpcSafe(await appendTaskActivityRow(context.user.id, data.taskId, data.body));
   });
 
 export const $toggleTaskDone = createServerFn({ method: "POST" })

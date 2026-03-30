@@ -9,12 +9,12 @@ export function defaultTaskRange() {
   return { from: from.toISOString(), to: to.toISOString() };
 }
 
-/** Wider span for the timeline screen (initial load before slider). */
-export function timelineTaskRange() {
-  return timelineRangeFromHorizonDays(42);
+/** Default span for the timeline page: past week + next four weeks. */
+export function timelineFixedRange() {
+  return timelineRangeFromHorizonDays(28);
 }
 
-/** Past 7 days + next `forwardDays` — controlled by timeline horizon slider (14–90). */
+/** Past 7 days + next `forwardDays` (forward clamped 14–90). */
 export function timelineRangeFromHorizonDays(forwardDays: number) {
   const d = Math.min(90, Math.max(14, Math.round(forwardDays)));
   const from = new Date();

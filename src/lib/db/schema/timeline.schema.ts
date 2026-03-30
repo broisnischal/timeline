@@ -1,7 +1,22 @@
-import { relations } from "drizzle-orm";
-import { boolean, index, integer, pgEnum, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { relations, sql } from "drizzle-orm";
+import {
+  boolean,
+  index,
+  integer,
+  jsonb,
+  pgEnum,
+  pgTable,
+  text,
+  timestamp,
+} from "drizzle-orm/pg-core";
 
 import { user } from "./auth.schema";
+
+/** Checklist items on a task (stored as JSON). */
+export type TaskSubtask = { id: string; title: string; done: boolean };
+
+/** Timestamped notes / progress log (stored as JSON). */
+export type TaskActivityEntry = { id: string; at: string; body: string };
 
 /** Categories / folders (e.g. Content, Reading, Blog). */
 export const taskStatusEnum = pgEnum("task_status", ["todo", "done", "cancelled"]);
@@ -37,6 +52,10 @@ export const task = pgTable(
       .notNull()
       .references(() => space.id, { onDelete: "cascade" }),
     title: text("title").notNull(),
+    /** Optional emoji shown on cards (single grapheme cluster, max a few chars). */
+    icon: text("icon"),
+    /** Optional hex accent (e.g. #6366f1) for timeline card rail. */
+    accentColor: text("accent_color"),
     notes: text("notes"),
     /** Outcome / output once done (what shipped, what you learned). */
     outcome: text("outcome"),
@@ -48,6 +67,14 @@ export const task = pgTable(
     isPublic: boolean("is_public").default(false).notNull(),
     completedAt: timestamp("completed_at"),
     sortOrder: integer("sort_order").default(0).notNull(),
+    subtasks: jsonb("subtasks")
+      .$type<TaskSubtask[]>()
+      .notNull()
+      .default(sql`'[]'::jsonb`),
+    activityLog: jsonb("activity_log")
+      .$type<TaskActivityEntry[]>()
+      .notNull()
+      .default(sql`'[]'::jsonb`),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
       .defaultNow()

@@ -14,7 +14,13 @@ import {
 } from "drizzle-orm";
 
 import { db } from "@/lib/db";
-import { publicProfile, space, task } from "@/lib/db/schema/timeline.schema";
+import {
+  type TaskActivityEntry,
+  type TaskSubtask,
+  publicProfile,
+  space,
+  task,
+} from "@/lib/db/schema/timeline.schema";
 
 import type { YearActivityCell } from "./year-activity.types";
 
@@ -162,6 +168,20 @@ export async function listTasksForUser(
     .orderBy(asc(anchor), desc(task.createdAt));
 }
 
+export async function getTaskByIdForUser(userId: string, taskId: string) {
+  const rows = await db
+    .select({
+      ...getTableColumns(task),
+      spaceName: space.name,
+      spaceColor: space.color,
+    })
+    .from(task)
+    .innerJoin(space, eq(task.spaceId, space.id))
+    .where(and(eq(task.id, taskId), eq(task.userId, userId)))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
 export async function createTaskRow(
   userId: string,
   input: {
@@ -173,6 +193,8 @@ export async function createTaskRow(
     dueAt?: string | undefined;
     durationMinutes?: number | undefined;
     isPublic?: boolean | undefined;
+    icon?: string | undefined;
+    accentColor?: string | undefined;
   },
 ) {
   const [sp] = await db
@@ -188,6 +210,8 @@ export async function createTaskRow(
     userId,
     spaceId: input.spaceId,
     title: input.title,
+    icon: input.icon?.trim() || null,
+    accentColor: input.accentColor?.trim() || null,
     notes: input.notes,
     outcome: input.outcome,
     startsAt,
@@ -213,6 +237,9 @@ export async function updateTaskRow(
     status?: "todo" | "done" | "cancelled" | undefined;
     isPublic?: boolean | undefined;
     spaceId?: string | undefined;
+    icon?: string | null | undefined;
+    accentColor?: string | null | undefined;
+    subtasks?: TaskSubtask[] | undefined;
   },
 ) {
   const [t] = await db
@@ -256,11 +283,32 @@ export async function updateTaskRow(
       ...(input.status !== undefined ? { status: input.status } : {}),
       ...(input.isPublic !== undefined ? { isPublic: input.isPublic } : {}),
       ...(input.spaceId !== undefined ? { spaceId: input.spaceId } : {}),
+      ...(input.icon !== undefined ? { icon: input.icon } : {}),
+      ...(input.accentColor !== undefined ? { accentColor: input.accentColor } : {}),
+      ...(input.subtasks !== undefined ? { subtasks: input.subtasks } : {}),
       ...(completedAt !== undefined ? { completedAt } : {}),
     })
     .where(eq(task.id, input.id));
 
   const row = await db.select().from(task).where(eq(task.id, input.id));
+  return row[0]!;
+}
+
+export async function appendTaskActivityRow(userId: string, taskId: string, body: string) {
+  const trimmed = body.trim();
+  if (!trimmed) throw new Error("Log text is empty");
+  const [t] = await db
+    .select()
+    .from(task)
+    .where(and(eq(task.id, taskId), eq(task.userId, userId)));
+  if (!t) throw new Error("Task not found");
+  const log = (t.activityLog as TaskActivityEntry[]) ?? [];
+  const next: TaskActivityEntry[] = [
+    ...log,
+    { id: newId(), at: new Date().toISOString(), body: trimmed },
+  ];
+  await db.update(task).set({ activityLog: next }).where(eq(task.id, taskId));
+  const row = await db.select().from(task).where(eq(task.id, taskId));
   return row[0]!;
 }
 

@@ -1,10 +1,11 @@
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { getRouteApi } from "@tanstack/react-router";
 import { useState } from "react";
 
 import { PlanCapture } from "@/components/timeline/plan-capture";
-import { TaskList } from "@/components/timeline/task-list";
+import { UpcomingTaskLines } from "@/components/timeline/upcoming-task-lines";
+import { UpcomingTasksShimmer } from "@/components/timeline/upcoming-tasks-shimmer";
 import { appSearchSchema } from "@/lib/timeline/app-search";
 import { spacesQueryOptions, tasksQueryOptions } from "@/lib/timeline/queries";
 import { defaultTaskRange } from "@/lib/timeline/range";
@@ -32,13 +33,17 @@ export const Route = createFileRoute("/_auth/app/")({
 function AppIndex() {
   const { range } = Route.useLoaderData();
   const search = appRouteApi.useSearch();
-  const spaces = useQuery(spacesQueryOptions());
-  const tasks = useQuery(
-    tasksQueryOptions({
+  const spaces = useQuery({
+    ...spacesQueryOptions(),
+    placeholderData: keepPreviousData,
+  });
+  const tasks = useQuery({
+    ...tasksQueryOptions({
       ...range,
       ...(search.space ? { spaceId: search.space } : {}),
     }),
-  );
+    placeholderData: keepPreviousData,
+  });
 
   const [composeDraft] = useState(() => {
     if (typeof window === "undefined") return undefined;
@@ -49,13 +54,31 @@ function AppIndex() {
 
   const activeSpaceId = search.space ?? spaces.data?.[0]?.id ?? "";
 
-  if (spaces.isPending || tasks.isPending) {
+  const initialSpacesLoading = spaces.isPending && spaces.data === undefined;
+  const initialTasksLoading = tasks.isPending && tasks.data === undefined;
+  const spaceRefreshing = tasks.isFetching && tasks.isPlaceholderData;
+
+  if (initialSpacesLoading) {
     return (
-      <div className="animate-pulse py-24 text-center text-sm text-muted-foreground">Loading…</div>
+      <div className="space-y-12">
+        <div className="space-y-1">
+          <div className="timeline-shimmer-bg h-8 max-w-[8rem] rounded-md bg-muted" />
+          <div className="timeline-shimmer-bg mt-2 h-4 max-w-md rounded-md bg-muted/80" />
+        </div>
+        <div className="timeline-shimmer-bg h-40 rounded-xl border border-border/50 bg-muted/25" />
+        <div>
+          <div className="timeline-shimmer-bg mb-4 h-3 w-24 rounded-md bg-muted/70" />
+          <UpcomingTasksShimmer rows={5} />
+        </div>
+      </div>
     );
   }
 
-  if (spaces.isError || tasks.isError) {
+  if (spaces.isError && spaces.data === undefined) {
+    return <p className="text-center text-sm text-destructive">Something went wrong.</p>;
+  }
+
+  if (tasks.isError && tasks.data === undefined) {
     return <p className="text-center text-sm text-destructive">Something went wrong.</p>;
   }
 
@@ -79,7 +102,20 @@ function AppIndex() {
         <h2 className="mb-4 text-xs font-medium tracking-wide text-muted-foreground uppercase">
           Upcoming
         </h2>
-        <TaskList tasks={tasks.data} />
+        {spaceRefreshing ? (
+          <div
+            className="mb-4 h-0.5 w-full overflow-hidden rounded-full bg-muted"
+            role="status"
+            aria-label="Updating tasks"
+          >
+            <div className="timeline-bar-indeterminate h-full w-1/3 rounded-full bg-primary/70" />
+          </div>
+        ) : null}
+        {initialTasksLoading ? (
+          <UpcomingTasksShimmer rows={5} className="min-h-[14rem]" />
+        ) : (
+          <UpcomingTaskLines tasks={tasks.data!} search={search as Record<string, unknown>} />
+        )}
       </div>
     </div>
   );

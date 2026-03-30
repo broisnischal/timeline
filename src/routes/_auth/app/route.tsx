@@ -27,7 +27,7 @@ function AppLayout() {
   const search = appRouteApi.useSearch();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isHome = pathname === "/app" || pathname === "/app/";
-  const isTimeline = pathname.startsWith("/app/timeline");
+  const isTimeline = pathname.startsWith("/app/timeline") || pathname.startsWith("/app/tasks/");
 
   useHotkeys(
     [

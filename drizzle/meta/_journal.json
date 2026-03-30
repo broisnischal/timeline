@@ -15,6 +15,13 @@
       "when": 1774847808433,
       "tag": "0001_abnormal_paibok",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1774850500388,
+      "tag": "0002_useful_tyger_tiger",
+      "breakpoints": true
     }
   ]
 }
