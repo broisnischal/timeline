@@ -5,9 +5,19 @@
   "compatibility_flags": ["nodejs_compat", "nodejs_als"],
   "main": "@tanstack/react-start/server-entry",
   "preview_urls": true,
+  "assets": {},
+  "routes": [
+    {
+      "pattern": "timeline.lexicon.website",
+      "zone_name": "lexicon.website",
+      "custom_domain": true,
+    },
+  ],
+  "workers_dev": true,
+  "vars": {},
   "observability": {
     "logs": {
-      "enabled": false,
+      "enabled": true,
       "head_sampling_rate": 1,
       "invocation_logs": true,
       "persist": true,
