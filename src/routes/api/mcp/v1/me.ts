@@ -13,10 +13,12 @@ export const Route = createFileRoute("/api/mcp/v1/me")({
         if (!userId) {
           return jsonError("unauthorized", 401);
         }
+        const origin = env.VITE_BASE_URL.replace(/\/$/, "");
         return jsonResponse({
           userId,
           api: {
-            baseUrl: `${env.VITE_BASE_URL.replace(/\/$/, "")}/api/mcp/v1`,
+            baseUrl: `${origin}/api/mcp/v1`,
+            mcpStreamUrl: `${origin}/v1/mcp`,
             auth: "Send header Authorization: Bearer <your key from Profile → MCP access>.",
           },
           capabilities: {

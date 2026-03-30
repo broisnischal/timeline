@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as GuestRouteRouteImport } from './routes/_guest/route'
 import { Route as AuthRouteRouteImport } from './routes/_auth/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as V1McpRouteImport } from './routes/v1/mcp'
 import { Route as PSlugRouteImport } from './routes/p/$slug'
 import { Route as GuestSignupRouteImport } from './routes/_guest/signup'
 import { Route as GuestLoginRouteImport } from './routes/_guest/login'
@@ -40,6 +41,11 @@ const AuthRouteRoute = AuthRouteRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const V1McpRoute = V1McpRouteImport.update({
+  id: '/v1/mcp',
+  path: '/v1/mcp',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PSlugRoute = PSlugRouteImport.update({
@@ -129,6 +135,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof GuestLoginRoute
   '/signup': typeof GuestSignupRoute
   '/p/$slug': typeof PSlugRoute
+  '/v1/mcp': typeof V1McpRoute
   '/app/about': typeof AuthAppAboutRoute
   '/app/focus': typeof AuthAppFocusRoute
   '/app/profile': typeof AuthAppProfileRoute
@@ -147,6 +154,7 @@ export interface FileRoutesByTo {
   '/login': typeof GuestLoginRoute
   '/signup': typeof GuestSignupRoute
   '/p/$slug': typeof PSlugRoute
+  '/v1/mcp': typeof V1McpRoute
   '/app/about': typeof AuthAppAboutRoute
   '/app/focus': typeof AuthAppFocusRoute
   '/app/profile': typeof AuthAppProfileRoute
@@ -169,6 +177,7 @@ export interface FileRoutesById {
   '/_guest/login': typeof GuestLoginRoute
   '/_guest/signup': typeof GuestSignupRoute
   '/p/$slug': typeof PSlugRoute
+  '/v1/mcp': typeof V1McpRoute
   '/_auth/app/about': typeof AuthAppAboutRoute
   '/_auth/app/focus': typeof AuthAppFocusRoute
   '/_auth/app/profile': typeof AuthAppProfileRoute
@@ -190,6 +199,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/p/$slug'
+    | '/v1/mcp'
     | '/app/about'
     | '/app/focus'
     | '/app/profile'
@@ -208,6 +218,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/p/$slug'
+    | '/v1/mcp'
     | '/app/about'
     | '/app/focus'
     | '/app/profile'
@@ -229,6 +240,7 @@ export interface FileRouteTypes {
     | '/_guest/login'
     | '/_guest/signup'
     | '/p/$slug'
+    | '/v1/mcp'
     | '/_auth/app/about'
     | '/_auth/app/focus'
     | '/_auth/app/profile'
@@ -248,6 +260,7 @@ export interface RootRouteChildren {
   AuthRouteRoute: typeof AuthRouteRouteWithChildren
   GuestRouteRoute: typeof GuestRouteRouteWithChildren
   PSlugRoute: typeof PSlugRoute
+  V1McpRoute: typeof V1McpRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiPublicSlugRoute: typeof ApiPublicSlugRoute
   ApiMcpV1MeRoute: typeof ApiMcpV1MeRoute
@@ -276,6 +289,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/v1/mcp': {
+      id: '/v1/mcp'
+      path: '/v1/mcp'
+      fullPath: '/v1/mcp'
+      preLoaderRoute: typeof V1McpRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/p/$slug': {
@@ -458,6 +478,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRouteRoute: AuthRouteRouteWithChildren,
   GuestRouteRoute: GuestRouteRouteWithChildren,
   PSlugRoute: PSlugRoute,
+  V1McpRoute: V1McpRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiPublicSlugRoute: ApiPublicSlugRoute,
   ApiMcpV1MeRoute: ApiMcpV1MeRoute,

@@ -78,28 +78,30 @@ function McpSetupGuide({
   onOpenChange: (o: boolean) => void;
 }) {
   const origin = env.VITE_BASE_URL.replace(/\/$/, "");
+  const streamUrl = `${origin}/v1/mcp`;
   const apiBase = `${origin}/api/mcp/v1`;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="max-h-[min(85vh,36rem)] gap-0 overflow-y-auto p-0 sm:max-w-lg"
         showCloseButton
+        className="flex max-h-[min(90vh,34rem)] w-full max-w-[calc(100%-1.5rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg"
       >
-        <DialogHeader className="border-b border-border/50 px-5 py-4">
-          <DialogTitle className="text-lg">Using MCP with Timeline</DialogTitle>
+        <DialogHeader className="shrink-0 border-b border-border/50 px-5 py-4">
+          <DialogTitle className="text-lg">MCP in Cursor</DialogTitle>
           <DialogDescription className="text-sm">
-            Cursor does not talk to your app URL by itself. It starts a small local process (this
-            repo’s{" "}
+            Use the Streamable HTTP endpoint below with your Profile secret in{" "}
             <code className="rounded bg-muted px-1 py-0.5 font-mono text-[12px]">
-              mcp/timeline-mcp.ts
+              Authorization
             </code>
-            ) that calls your API using two environment variables.
+            . REST tools for scripts live at{" "}
+            <code className="rounded bg-muted px-1 py-0.5 font-mono text-[11px]">{apiBase}</code>.
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-0 px-5 py-4">
+
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
           <ol className="list-none space-y-0">
-            <li className="flex gap-3 border-b border-border/40 py-4 first:pt-0 last:border-b-0">
+            <li className="flex gap-3 border-b border-border/40 py-4 first:pt-0">
               <span
                 className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/12 text-sm font-semibold text-primary tabular-nums"
                 aria-hidden
@@ -107,72 +109,9 @@ function McpSetupGuide({
                 1
               </span>
               <div className="min-w-0 space-y-1 pt-0.5">
-                <p className="font-medium text-foreground">Turn on access and copy the secret</p>
+                <p className="font-medium text-foreground">Secret</p>
                 <p className="text-sm leading-relaxed text-muted-foreground">
-                  Use the switch below, then copy the token from the amber box — it only appears
-                  once until you rotate.
-                </p>
-              </div>
-            </li>
-            <li className="flex gap-3 border-b border-border/40 py-4 last:border-b-0">
-              <span
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/12 text-sm font-semibold text-primary tabular-nums"
-                aria-hidden
-              >
-                2
-              </span>
-              <div className="min-w-0 space-y-2 pt-0.5">
-                <p className="font-medium text-foreground">
-                  Cursor: add MCP with env (this is the normal setup)
-                </p>
-                <p className="text-sm leading-relaxed text-muted-foreground">
-                  Open Cursor → Settings → MCP (or edit your MCP JSON). Add a server that runs{" "}
-                  <code className="rounded bg-muted px-1 py-0.5 font-mono text-[12px]">bun</code> on
-                  this repo’s{" "}
-                  <code className="rounded bg-muted px-1 py-0.5 font-mono text-[11px]">
-                    mcp/timeline-mcp.ts
-                  </code>
-                  , and set{" "}
-                  <code className="rounded bg-muted px-1 py-0.5 font-mono text-[12px]">
-                    TIMELINE_API_URL
-                  </code>{" "}
-                  to your app origin (e.g.{" "}
-                  <code className="rounded bg-muted px-1 py-0.5 font-mono text-[12px]">
-                    {origin}
-                  </code>
-                  ) and{" "}
-                  <code className="rounded bg-muted px-1 py-0.5 font-mono text-[12px]">
-                    TIMELINE_API_KEY
-                  </code>{" "}
-                  to the secret you copied. Cursor launches that process for you — you do not need a
-                  separate terminal running.
-                </p>
-                <pre className="mt-2 max-h-48 overflow-x-auto overflow-y-auto rounded-lg border border-border/60 bg-muted/40 p-3 font-mono text-[11px] leading-relaxed text-foreground">
-                  {`{
-  "mcpServers": {
-    "timeline": {
-      "command": "bun",
-      "args": ["/absolute/path/to/timeline/mcp/timeline-mcp.ts"],
-      "env": {
-        "TIMELINE_API_URL": "${origin}",
-        "TIMELINE_API_KEY": "<paste secret from Profile>"
-      }
-    }
-  }
-}`}
-                </pre>
-                <p className="text-[11px] leading-relaxed text-muted-foreground">
-                  Replace the path with the real path to this repository on your machine. If you use{" "}
-                  <code className="rounded bg-muted px-1 py-0.5 font-mono text-[11px]">node</code>{" "}
-                  instead of{" "}
-                  <code className="rounded bg-muted px-1 py-0.5 font-mono text-[11px]">bun</code>,
-                  install{" "}
-                  <code className="rounded bg-muted px-1 py-0.5 font-mono text-[11px]">bun</code> or
-                  run via{" "}
-                  <code className="rounded bg-muted px-1 py-0.5 font-mono text-[11px]">
-                    npx tsx
-                  </code>{" "}
-                  with the same script path.
+                  Turn MCP on below, then copy the token from the amber box (once per rotation).
                 </p>
               </div>
             </li>
@@ -181,28 +120,64 @@ function McpSetupGuide({
                 className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/12 text-sm font-semibold text-primary tabular-nums"
                 aria-hidden
               >
+                2
+              </span>
+              <div className="min-w-0 space-y-3 pt-0.5">
+                <p className="font-medium text-foreground">Cursor: URL + Bearer</p>
+                <p className="text-sm leading-relaxed text-muted-foreground">
+                  In Cursor → Settings → MCP, add a server whose URL is your Streamable MCP endpoint
+                  and pass the same Bearer token you copied. Exact field names depend on your Cursor
+                  version (often{" "}
+                  <code className="rounded bg-muted px-1 py-0.5 font-mono text-[11px]">url</code> +{" "}
+                  <code className="rounded bg-muted px-1 py-0.5 font-mono text-[11px]">
+                    headers
+                  </code>
+                  ).
+                </p>
+                <pre className="rounded-lg border border-border/60 bg-muted/40 p-3 font-mono text-[11px] leading-relaxed break-all text-foreground">{`{
+  "mcpServers": {
+    "timeline": {
+      "url": "${streamUrl}",
+      "headers": {
+        "Authorization": "Bearer <paste secret from Profile>"
+      }
+    }
+  }
+}`}</pre>
+              </div>
+            </li>
+            <li className="flex gap-3 border-t border-border/40 py-4">
+              <span
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted/80 text-sm font-semibold text-muted-foreground tabular-nums"
+                aria-hidden
+              >
                 3
               </span>
               <div className="min-w-0 space-y-1 pt-0.5">
-                <p className="font-medium text-foreground">Optional: test in a terminal</p>
+                <p className="font-medium text-foreground">Optional: stdio</p>
                 <p className="text-sm leading-relaxed text-muted-foreground">
                   <code className="rounded bg-muted px-1 py-0.5 font-mono text-[12px]">
                     bun run mcp:timeline
                   </code>{" "}
-                  in the repo runs the same script with env from your shell — useful for debugging.
-                  Your HTTP API is at{" "}
+                  in this repo runs the same tools over stdio with{" "}
                   <code className="rounded bg-muted px-1 py-0.5 font-mono text-[11px]">
-                    {apiBase}
+                    TIMELINE_API_URL
                   </code>{" "}
-                  (used by the script, not pasted into Cursor alone).
+                  and{" "}
+                  <code className="rounded bg-muted px-1 py-0.5 font-mono text-[11px]">
+                    TIMELINE_API_KEY
+                  </code>{" "}
+                  — only if you prefer a subprocess instead of the URL above.
                 </p>
               </div>
             </li>
           </ol>
         </div>
-        <div className="border-t border-border/50 bg-muted/20 px-5 py-3">
+
+        <div className="shrink-0 border-t border-border/50 bg-muted/20 px-5 py-3">
           <p className="text-[11px] leading-relaxed text-muted-foreground">
-            Revoking access invalidates the current secret immediately. Rotate if a key leaks.
+            Revoking access invalidates the secret immediately. Endpoint:{" "}
+            <code className="rounded bg-muted px-1 py-0.5 font-mono text-[10px]">{streamUrl}</code>
           </p>
         </div>
       </DialogContent>
@@ -287,6 +262,7 @@ export const ProfileMcpSection = memo(function ProfileMcpSection() {
   const enabled = data?.enabled ?? false;
   const busy = enableMut.isPending || rotateMut.isPending || revokeMut.isPending;
   const origin = env.VITE_BASE_URL.replace(/\/$/, "");
+  const mcpStreamUrl = `${origin}/v1/mcp`;
   const apiBase = `${origin}/api/mcp/v1`;
   const bearerExample = "Authorization: Bearer <token>";
 
@@ -322,8 +298,7 @@ export const ProfileMcpSection = memo(function ProfileMcpSection() {
                 ) : null}
               </div>
               <p className="max-w-prose text-sm leading-relaxed text-muted-foreground">
-                Cursor runs a local script from this repo with two env vars — see the guide for the
-                exact MCP JSON.
+                Cursor: MCP URL + Bearer token. Open the guide for the JSON snippet.
               </p>
               <Button
                 type="button"
@@ -366,7 +341,13 @@ export const ProfileMcpSection = memo(function ProfileMcpSection() {
 
           {enabled ? (
             <div className="mt-6 space-y-3 border-t border-border/50 pt-6">
-              <CopyRow label="API base" value={apiBase} copyLabel="Copy API base URL" />
+              <CopyRow
+                label="MCP stream (Cursor)"
+                value={mcpStreamUrl}
+                copyLabel="Copy MCP stream URL"
+              />
+
+              <CopyRow label="REST API base" value={apiBase} copyLabel="Copy REST API base URL" />
 
               <CopyRow
                 label="Auth header"
