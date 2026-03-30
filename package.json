@@ -6,7 +6,7 @@
     "dev": "vite dev",
     "build": "vite build",
     "build:vercel": "NITRO_PRESET=vercel vite build",
-    "start": "node .output/server/index.mjs",
+    "start": "node --env-file=.env .output/server/index.mjs",
     "preview": "vite preview",
     "lint": "oxlint --type-aware --type-check",
     "deploy": "CLOUDFLARE_VITE=1 npm run build && wrangler deploy",
