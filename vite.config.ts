@@ -20,6 +20,7 @@ export default defineConfig(() => {
     },
     server: {
       port: 3000,
+      allowedHosts: ["timeline.lexicon.website", "localhost"],
     },
     plugins: [
       ...(enableCloudflare ? [cloudflare({ viteEnvironment: { name: "ssr" } })] : []),
