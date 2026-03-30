@@ -1,0 +1,16 @@
+{
+	email admin@discerns.app
+}
+
+http://www.timeline.lexicon.website, https://www.timeline.lexicon.website {
+	redir https://timeline.lexicon.website{uri} permanent
+}
+
+http://timeline.lexicon.website {
+	redir https://timeline.lexicon.website{uri} permanent
+}
+
+https://timeline.lexicon.website {
+  encode zstd gzip
+  reverse_proxy app:3000
+}
