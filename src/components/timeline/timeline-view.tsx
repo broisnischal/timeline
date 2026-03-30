@@ -1,8 +1,7 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-
 import type { TaskListRow } from "@/components/timeline/task-list";
 import { TimelineFeedRow } from "@/components/timeline/timeline-feed-row";
-import { $toggleTaskDone } from "@/lib/timeline/functions";
+import type { AppSearch } from "@/lib/timeline/app-search";
+import { useToggleTaskDone } from "@/lib/timeline/use-toggle-task-done";
 import { cn } from "@/lib/utils";
 
 /** Local calendar day (YYYY-MM-DD) for grouping and labels. */
@@ -72,16 +71,9 @@ export function TimelineView({
   search,
 }: {
   readonly tasks: TaskListRow[];
-  readonly search: Record<string, unknown>;
+  readonly search: AppSearch;
 }) {
-  const qc = useQueryClient();
-  const toggle = useMutation({
-    mutationFn: (id: string) => $toggleTaskDone({ data: { id } }),
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ["tasks"] });
-      void qc.invalidateQueries({ queryKey: ["streak"] });
-    },
-  });
+  const toggle = useToggleTaskDone();
 
   const overdue = tasks.filter(isOverdue).sort((a, b) => sortKey(a) - sortKey(b));
   const overdueIds = new Set(overdue.map((r) => r.id));
@@ -91,22 +83,24 @@ export function TimelineView({
   if (grouped.length === 0 && overdue.length === 0) {
     return (
       <p className="py-16 text-center text-sm text-muted-foreground">
-        Nothing in this range yet. Add a task above or load samples.
+        Nothing scheduled in this window.
       </p>
     );
   }
 
   return (
-    <div className="space-y-14">
+    <div className="space-y-12">
       {overdue.length > 0 ? (
-        <section className="space-y-4">
-          <div className="flex items-baseline justify-between gap-3 border-b border-border/60 pb-3">
-            <h2 className="text-base font-semibold tracking-tight text-destructive">Overdue</h2>
-            <span className="text-xs text-muted-foreground tabular-nums">{overdue.length}</span>
+        <section className="space-y-3">
+          <div className="flex items-center gap-3">
+            <h2 className="shrink-0 text-xs font-semibold tracking-wider text-destructive uppercase">
+              Overdue
+            </h2>
+            <div className="h-px min-w-0 flex-1 bg-border/70" aria-hidden />
+            <span className="shrink-0 text-[11px] text-muted-foreground tabular-nums">
+              {overdue.length}
+            </span>
           </div>
-          <p className="text-xs text-muted-foreground">
-            Due before today — open a task to reschedule or finish.
-          </p>
           <div className="relative">
             <div
               className="absolute top-8 bottom-4 left-[19px] w-px bg-border/80 max-sm:hidden"
@@ -119,7 +113,7 @@ export function TimelineView({
                     row={row}
                     search={search}
                     onToggleDone={(id) => toggle.mutate(id)}
-                    togglePending={toggle.isPending}
+                    togglePending={toggle.isPendingFor(row.id)}
                   />
                 </li>
               ))}
@@ -129,23 +123,26 @@ export function TimelineView({
       ) : null}
 
       {grouped.length > 0 ? (
-        <div className="space-y-12">
+        <div className="space-y-10">
           {grouped.map(([day, dayTasks]) => {
             const today = isTodayDay(day);
             const sorted = [...dayTasks].sort((a, b) => anchor(a).getTime() - anchor(b).getTime());
             return (
-              <section key={day} className="space-y-4">
-                <div className="border-b border-border/60 pb-3">
+              <section key={day} className="space-y-3">
+                <div className="flex items-baseline gap-3">
                   <h2
                     className={cn(
-                      "text-base font-semibold tracking-tight",
-                      today ? "text-primary" : "text-foreground",
+                      "shrink-0 text-sm font-medium tracking-tight tabular-nums",
+                      today ? "text-foreground" : "text-foreground/90",
                     )}
                   >
                     {dateHeadingFmt.format(parseLocalDay(day))}
                   </h2>
+                  <div className="h-px min-w-0 flex-1 translate-y-px bg-border/70" aria-hidden />
                   {today ? (
-                    <p className="mt-0.5 text-xs font-medium text-muted-foreground">Today</p>
+                    <span className="shrink-0 text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
+                      Today
+                    </span>
                   ) : null}
                 </div>
                 <div className="relative">
@@ -160,7 +157,7 @@ export function TimelineView({
                           row={row}
                           search={search}
                           onToggleDone={(id) => toggle.mutate(id)}
-                          togglePending={toggle.isPending}
+                          togglePending={toggle.isPendingFor(row.id)}
                         />
                       </li>
                     ))}
@@ -171,8 +168,8 @@ export function TimelineView({
           })}
         </div>
       ) : (
-        <p className="rounded-2xl border border-dashed border-border/60 bg-muted/15 px-4 py-8 text-center text-sm text-muted-foreground">
-          Everything else is caught up — only overdue items need attention right now.
+        <p className="py-6 text-center text-sm text-muted-foreground">
+          No upcoming items in this window — overdue items are listed above.
         </p>
       )}
     </div>

@@ -4,6 +4,7 @@ import type { CSSProperties } from "react";
 
 import type { TaskListRow } from "@/components/timeline/task-list";
 import { Checkbox } from "@/components/ui/checkbox";
+import type { AppSearch } from "@/lib/timeline/app-search";
 import { priorityBadge, resolveAccent } from "@/lib/timeline/task-appearance";
 import { cn } from "@/lib/utils";
 
@@ -21,7 +22,7 @@ function anchor(row: TaskListRow): Date {
 
 type Props = {
   readonly row: TaskListRow;
-  readonly search: Record<string, unknown>;
+  readonly search: AppSearch;
   readonly onToggleDone?: (id: string) => void;
   readonly togglePending?: boolean;
 };
@@ -108,7 +109,7 @@ export function TimelineFeedRow({ row, search, onToggleDone, togglePending }: Pr
                 disabled={togglePending}
                 onCheckedChange={() => onToggleDone(row.id)}
                 onClick={(e) => e.stopPropagation()}
-                className="size-4"
+                className="size-4 transition-opacity duration-150 ease-out data-[disabled]:opacity-60"
                 aria-label={done ? "Mark as todo" : "Mark done"}
               />
             </div>

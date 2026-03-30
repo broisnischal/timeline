@@ -74,12 +74,12 @@ export function AppSpaceDropdown() {
   };
 
   if (isPending || !spaces) {
-    return <div className="h-8 w-full max-w-[11rem] animate-pulse rounded-full bg-muted/60" />;
+    return <div className="h-8 w-full max-w-fit animate-pulse rounded-full bg-muted/60" />;
   }
 
   return (
     <>
-      <div className="max-w-[min(100%,14rem)] min-w-0 sm:max-w-xs">
+      <div className="max-w-[min(100%,10rem)] min-w-0 sm:max-w-xs">
         <DropdownMenu>
           <DropdownMenuTrigger
             render={
@@ -87,7 +87,7 @@ export function AppSpaceDropdown() {
                 variant="outline"
                 size="sm"
                 className={cn(
-                  "h-8 w-full max-w-full justify-between gap-2 rounded-full px-3 font-normal",
+                  "h-8 w-full max-w-fit justify-between gap-2 rounded-full px-3 font-normal",
                   "border-border/80 bg-background hover:bg-muted/60",
                 )}
               />

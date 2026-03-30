@@ -8,6 +8,7 @@ import { PlanCapture } from "@/components/timeline/plan-capture";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth/hooks";
 import { authQueryOptions } from "@/lib/auth/queries";
+import { appSearchEmpty } from "@/lib/timeline/app-search";
 import { spacesQueryOptions } from "@/lib/timeline/queries";
 
 const HOME_SELECTED_SPACE_KEY = "homeSelectedSpaceId";
@@ -92,7 +93,11 @@ function HomePage() {
 
         <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
           {!isPending && user ? (
-            <Button nativeButton={false} render={<Link to="/app" />} size="lg">
+            <Button
+              nativeButton={false}
+              render={<Link to="/app" search={() => appSearchEmpty} />}
+              size="lg"
+            >
               Full workspace
               <ArrowRightIcon className="size-4" />
             </Button>

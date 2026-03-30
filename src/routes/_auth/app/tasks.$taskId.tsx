@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { getRouteApi } from "@tanstack/react-router";
 import { ArrowLeftIcon } from "lucide-react";
@@ -6,6 +6,7 @@ import { ArrowLeftIcon } from "lucide-react";
 import { TaskDetailForm } from "@/components/timeline/task-detail-form";
 import { appSearchSchema } from "@/lib/timeline/app-search";
 import { spacesQueryOptions, taskQueryOptions } from "@/lib/timeline/queries";
+import { findTaskInCachedLists } from "@/lib/timeline/task-cache-helpers";
 
 const appRouteApi = getRouteApi("/_auth/app");
 
@@ -23,12 +24,33 @@ export const Route = createFileRoute("/_auth/app/tasks/$taskId")({
 function TaskDetailPage() {
   const { taskId } = Route.useParams();
   const search = appRouteApi.useSearch();
-  const task = useQuery(taskQueryOptions(taskId));
+  const qc = useQueryClient();
+  const task = useQuery({
+    ...taskQueryOptions(taskId),
+    placeholderData: () => findTaskInCachedLists(qc, taskId),
+  });
   const spaces = useQuery(spacesQueryOptions());
 
-  if (task.isPending || spaces.isPending) {
+  const initialSpacesLoading = spaces.isPending && spaces.data === undefined;
+  const initialTaskLoading = task.isPending && task.data === undefined;
+
+  if (initialSpacesLoading) {
     return (
-      <div className="animate-pulse py-24 text-center text-sm text-muted-foreground">Loading…</div>
+      <div className="space-y-8">
+        <div className="timeline-shimmer-bg h-4 w-32 rounded-md bg-muted/80" />
+        <div className="timeline-shimmer-bg h-40 rounded-2xl bg-muted/40" />
+      </div>
+    );
+  }
+
+  if (initialTaskLoading) {
+    return (
+      <div className="space-y-8">
+        <div className="timeline-shimmer-bg h-4 w-32 rounded-md bg-muted/80" />
+        <div className="timeline-shimmer-bg h-9 max-w-md rounded-lg bg-muted/70" />
+        <div className="timeline-shimmer-bg h-40 rounded-2xl bg-muted/40" />
+        <div className="timeline-shimmer-bg h-24 rounded-xl bg-muted/30" />
+      </div>
     );
   }
 
@@ -50,12 +72,6 @@ function TaskDetailPage() {
   }
 
   const data = task.data;
-  const updatedKey =
-    typeof data.updatedAt === "string"
-      ? data.updatedAt
-      : data.updatedAt instanceof Date
-        ? data.updatedAt.toISOString()
-        : String(data.updatedAt);
 
   return (
     <div className="space-y-8">
@@ -74,10 +90,10 @@ function TaskDetailPage() {
         </p>
       </div>
       <TaskDetailForm
-        key={updatedKey}
+        key={taskId}
         row={data}
         spaces={(spaces.data ?? []).map((s) => ({ id: s.id, name: s.name }))}
-        search={search as Record<string, unknown>}
+        search={search}
       />
     </div>
   );

@@ -12,13 +12,10 @@ import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
 import type { TaskSubtask } from "@/lib/db/schema/timeline.schema";
-import {
-  $appendTaskActivity,
-  $deleteTask,
-  $toggleTaskDone,
-  $updateTask,
-} from "@/lib/timeline/functions";
+import type { AppSearch } from "@/lib/timeline/app-search";
+import { $appendTaskActivity, $deleteTask, $updateTask } from "@/lib/timeline/functions";
 import { ACCENT_PRESETS, EMOJI_GRID, resolveAccent } from "@/lib/timeline/task-appearance";
+import { useToggleTaskDone } from "@/lib/timeline/use-toggle-task-done";
 import { cn } from "@/lib/utils";
 
 const logTimeFmt = new Intl.DateTimeFormat(undefined, {
@@ -73,7 +70,7 @@ export function TaskDetailForm({
 }: {
   readonly row: TaskListRow;
   readonly spaces: SpaceOption[];
-  readonly search: Record<string, unknown>;
+  readonly search: AppSearch;
 }) {
   const qc = useQueryClient();
   const navigate = useNavigate();
@@ -124,11 +121,7 @@ export function TaskDetailForm({
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const toggle = useMutation({
-    mutationFn: (id: string) => $toggleTaskDone({ data: { id } }),
-    onSuccess: invalidate,
-    onError: (e: Error) => toast.error(e.message),
-  });
+  const toggle = useToggleTaskDone();
 
   const appendLog = useMutation({
     mutationFn: (body: string) => $appendTaskActivity({ data: { taskId: row.id, body } }),
@@ -287,7 +280,7 @@ export function TaskDetailForm({
             <div className="flex flex-wrap items-center gap-3">
               <Checkbox
                 checked={done}
-                disabled={toggle.isPending}
+                disabled={toggle.isPendingFor(row.id)}
                 onCheckedChange={() => toggle.mutate(row.id)}
                 id="task-done"
               />

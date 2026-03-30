@@ -13,6 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { appSearchEmpty } from "@/lib/timeline/app-search";
 import { cn } from "@/lib/utils";
 
 type SpaceRow = { id: string; name: string };
@@ -51,7 +52,7 @@ export function HomeNavbar({
           {loggedIn && (spacesPending || hasSpaces) ? (
             <div className="max-w-[min(100%,14rem)] min-w-0 sm:max-w-xs">
               {spacesPending ? (
-                <div className="h-8 w-full max-w-[11rem] animate-pulse rounded-full bg-muted/60" />
+                <div className="h-8 w-full max-w-fit animate-pulse rounded-full bg-muted/60" />
               ) : (
                 <DropdownMenu>
                   <DropdownMenuTrigger
@@ -103,7 +104,7 @@ export function HomeNavbar({
           ) : loggedIn ? (
             <Button
               nativeButton={false}
-              render={<Link to="/app" />}
+              render={<Link to="/app" search={() => appSearchEmpty} />}
               size="sm"
               className="gap-1.5 rounded-full"
             >

@@ -1,7 +1,6 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-
 import { Checkbox } from "@/components/ui/checkbox";
-import { $listTasks, $toggleTaskDone } from "@/lib/timeline/functions";
+import { $listTasks } from "@/lib/timeline/functions";
+import { useToggleTaskDone } from "@/lib/timeline/use-toggle-task-done";
 
 export type TaskListRow = Awaited<ReturnType<typeof $listTasks>>[number];
 
@@ -21,15 +20,7 @@ export function TaskList({
   readonly tasks: TaskListRow[];
   readonly compact?: boolean;
 }) {
-  const qc = useQueryClient();
-  const toggle = useMutation({
-    mutationFn: (id: string) => $toggleTaskDone({ data: { id } }),
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ["tasks"] });
-      void qc.invalidateQueries({ queryKey: ["streak"] });
-    },
-    onError: (e: Error) => console.error(e),
-  });
+  const toggle = useToggleTaskDone();
 
   if (tasks.length === 0) {
     return (
@@ -55,7 +46,7 @@ export function TaskList({
             <div className="pt-0.5">
               <Checkbox
                 checked={done}
-                disabled={toggle.isPending}
+                disabled={toggle.isPendingFor(row.id)}
                 onCheckedChange={() => toggle.mutate(row.id)}
                 className="size-5 transition-all duration-200 ease-out active:scale-[0.96]"
                 aria-label={done ? "Mark as todo" : "Mark done"}

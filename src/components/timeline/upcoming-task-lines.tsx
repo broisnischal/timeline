@@ -1,24 +1,16 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-
 import type { TaskListRow } from "@/components/timeline/task-list";
 import { TimelineFeedRow } from "@/components/timeline/timeline-feed-row";
-import { $toggleTaskDone } from "@/lib/timeline/functions";
+import type { AppSearch } from "@/lib/timeline/app-search";
+import { useToggleTaskDone } from "@/lib/timeline/use-toggle-task-done";
 
 export function UpcomingTaskLines({
   tasks,
   search,
 }: {
   readonly tasks: TaskListRow[];
-  readonly search: Record<string, unknown>;
+  readonly search: AppSearch;
 }) {
-  const qc = useQueryClient();
-  const toggle = useMutation({
-    mutationFn: (id: string) => $toggleTaskDone({ data: { id } }),
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ["tasks"] });
-      void qc.invalidateQueries({ queryKey: ["streak"] });
-    },
-  });
+  const toggle = useToggleTaskDone();
 
   if (tasks.length === 0) {
     return (
@@ -41,7 +33,7 @@ export function UpcomingTaskLines({
               row={row}
               search={search}
               onToggleDone={(id) => toggle.mutate(id)}
-              togglePending={toggle.isPending}
+              togglePending={toggle.isPendingFor(row.id)}
             />
           </li>
         ))}

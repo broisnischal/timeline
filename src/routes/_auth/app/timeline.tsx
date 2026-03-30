@@ -2,55 +2,35 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tansta
 import { createFileRoute } from "@tanstack/react-router";
 import { getRouteApi } from "@tanstack/react-router";
 import { SparklesIcon } from "lucide-react";
-import { lazy, Suspense, useMemo } from "react";
+import { useMemo } from "react";
 import { toast } from "sonner";
 
 import type { TaskListRow } from "@/components/timeline/task-list";
-import { TimelineQuickAdd } from "@/components/timeline/timeline-quick-add";
+import { TimelineToolbar } from "@/components/timeline/timeline-toolbar";
+import { TimelineView } from "@/components/timeline/timeline-view";
 import { UpcomingTasksShimmer } from "@/components/timeline/upcoming-tasks-shimmer";
 import { Button } from "@/components/ui/button";
 import { appSearchSchema } from "@/lib/timeline/app-search";
 import { $seedDemoTimeline } from "@/lib/timeline/functions";
 import { spacesQueryOptions, tasksQueryOptions } from "@/lib/timeline/queries";
-import { timelineFixedRange } from "@/lib/timeline/range";
-
-const TimelineView = lazy(() =>
-  import("@/components/timeline/timeline-view").then((m) => ({ default: m.TimelineView })),
-);
+import { timelineRangeFromPreset } from "@/lib/timeline/range";
 
 const appRouteApi = getRouteApi("/_auth/app");
 
-function startOfTodayLocal() {
-  const n = new Date();
-  n.setHours(0, 0, 0, 0);
-  return n;
-}
-
-function endOfNextSevenDays() {
-  const n = new Date();
-  n.setHours(23, 59, 59, 999);
-  n.setDate(n.getDate() + 7);
-  return n;
-}
-
-function countDueSoon(rows: TaskListRow[]) {
-  let n = 0;
-  const lo = startOfTodayLocal();
-  const hi = endOfNextSevenDays();
-  for (const row of rows) {
-    if (row.status !== "todo" || !row.dueAt) continue;
-    const d = new Date(row.dueAt);
-    if (d < lo) continue;
-    if (d <= hi) n++;
-  }
-  return n;
+function tasksMatchingQuery(rows: TaskListRow[], query: string | undefined) {
+  const q = query?.trim().toLowerCase();
+  if (!q) return rows;
+  return rows.filter((t) => {
+    const hay = `${t.title} ${t.notes ?? ""} ${t.spaceName ?? ""}`.toLowerCase();
+    return hay.includes(q);
+  });
 }
 
 export const Route = createFileRoute("/_auth/app/timeline")({
   component: TimelinePage,
   loader: async ({ context, location }) => {
     const search = appSearchSchema.parse(location.search ?? {});
-    const range = timelineFixedRange();
+    const range = timelineRangeFromPreset(search.range ?? "1m");
     await Promise.all([
       context.queryClient.ensureQueryData(spacesQueryOptions()),
       context.queryClient.ensureQueryData(
@@ -66,7 +46,8 @@ export const Route = createFileRoute("/_auth/app/timeline")({
 function TimelinePage() {
   const qc = useQueryClient();
   const search = appRouteApi.useSearch();
-  const range = useMemo(() => timelineFixedRange(), []);
+  const range = useMemo(() => timelineRangeFromPreset(search.range ?? "1m"), [search.range]);
+
   const tasks = useQuery({
     ...tasksQueryOptions({
       ...range,
@@ -80,7 +61,10 @@ function TimelinePage() {
     placeholderData: keepPreviousData,
   });
 
-  const activeSpaceId = search.space ?? spaces.data?.[0]?.id ?? "";
+  const filteredTasks = useMemo(
+    () => (tasks.data ? tasksMatchingQuery(tasks.data, search.q) : []),
+    [tasks.data, search.q],
+  );
 
   const seedMut = useMutation({
     mutationFn: () => $seedDemoTimeline({ data: {} }),
@@ -98,8 +82,6 @@ function TimelinePage() {
     onError: (e: Error) => toast.error(e.message || "Could not add samples"),
   });
 
-  const soonCount = tasks.data ? countDueSoon(tasks.data) : 0;
-
   const initialSpacesLoading = spaces.isPending && spaces.data === undefined;
   const initialTasksLoading = tasks.isPending && tasks.data === undefined;
   const spaceRefreshing = tasks.isFetching && tasks.isPlaceholderData;
@@ -107,11 +89,8 @@ function TimelinePage() {
   if (initialSpacesLoading) {
     return (
       <div className="space-y-8">
-        <div className="space-y-2">
-          <div className="timeline-shimmer-bg h-8 max-w-[12rem] rounded-md bg-muted" />
-          <div className="timeline-shimmer-bg h-4 max-w-xl rounded-md bg-muted/80" />
-        </div>
-        <div className="timeline-shimmer-bg h-24 rounded-xl border border-border/50 bg-muted/30" />
+        <div className="timeline-shimmer-bg h-8 max-w-[10rem] rounded-md bg-muted" />
+        <div className="timeline-shimmer-bg h-10 max-w-full rounded-md bg-muted/70" />
         <UpcomingTasksShimmer rows={8} className="min-h-[24rem]" />
       </div>
     );
@@ -125,25 +104,20 @@ function TimelinePage() {
     return <p className="text-center text-sm text-destructive">Could not load timeline.</p>;
   }
 
-  const empty = tasks.data !== undefined && tasks.data.length === 0;
+  const emptyRange = tasks.data !== undefined && tasks.data.length === 0;
+  const emptySearch =
+    tasks.data !== undefined &&
+    tasks.data.length > 0 &&
+    filteredTasks.length === 0 &&
+    Boolean(search.q?.trim());
 
   return (
-    <div className="space-y-8">
-      <div className="space-y-2">
-        <h1 className="text-2xl font-semibold tracking-tight">Timeline</h1>
-        <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">
-          See what&apos;s overdue, what&apos;s due soon, and the full calendar for the next few
-          weeks.
-          {soonCount > 0 ? (
-            <>
-              {" "}
-              <span className="font-medium text-foreground">{soonCount} due in the next week.</span>
-            </>
-          ) : null}
-        </p>
-      </div>
+    <div className="space-y-5">
+      <header>
+        <h1 className="text-xl font-semibold tracking-tight">Timeline</h1>
+      </header>
 
-      <TimelineQuickAdd activeSpaceId={activeSpaceId} />
+      <TimelineToolbar search={search} />
 
       {spaceRefreshing ? (
         <div
@@ -157,15 +131,19 @@ function TimelinePage() {
 
       {initialTasksLoading ? (
         <UpcomingTasksShimmer rows={8} className="min-h-[28rem]" />
-      ) : empty ? (
-        <div className="rounded-2xl border border-dashed border-border/60 bg-muted/20 px-6 py-14 text-center">
+      ) : emptySearch ? (
+        <p className="py-16 text-center text-sm text-muted-foreground">
+          No tasks match your search.
+        </p>
+      ) : emptyRange ? (
+        <div className="border border-dashed border-border/60 bg-muted/15 px-6 py-14 text-center">
           <SparklesIcon
             className="mx-auto mb-3 size-8 text-muted-foreground opacity-70"
             aria-hidden
           />
-          <p className="text-sm font-medium text-foreground">No tasks in this range yet</p>
+          <p className="text-sm font-medium text-foreground">Nothing in this range</p>
           <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground">
-            Add a task above, create plans from Home, or load sample data to preview the layout.
+            Widen the range above or add tasks from Home.
           </p>
           <Button
             type="button"
@@ -180,9 +158,7 @@ function TimelinePage() {
         </div>
       ) : (
         <div className="relative min-h-[20rem]">
-          <Suspense fallback={<UpcomingTasksShimmer rows={8} className="min-h-[28rem]" />}>
-            <TimelineView tasks={tasks.data!} search={search as Record<string, unknown>} />
-          </Suspense>
+          <TimelineView tasks={filteredTasks} search={search} />
         </div>
       )}
     </div>

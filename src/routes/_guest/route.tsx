@@ -1,6 +1,7 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 
 import { authQueryOptions } from "@/lib/auth/queries";
+import { appSearchEmpty } from "@/lib/timeline/app-search";
 
 export const Route = createFileRoute("/_guest")({
   component: RouteComponent,
@@ -16,6 +17,7 @@ export const Route = createFileRoute("/_guest")({
     if (user) {
       throw redirect({
         to: REDIRECT_URL,
+        search: () => appSearchEmpty,
       });
     }
 

@@ -119,7 +119,7 @@ function AppLayout() {
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-3xl px-4 py-8">
+      <main className="mx-auto max-w-3xl px-4 py-8 motion-safe:transition-[opacity,transform] motion-safe:duration-200 motion-safe:ease-out">
         <Outlet />
       </main>
     </div>

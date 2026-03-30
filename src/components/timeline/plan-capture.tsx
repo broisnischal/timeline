@@ -20,6 +20,7 @@ import { Kbd, KbdGroup } from "@/components/ui/kbd";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { $createTask } from "@/lib/timeline/functions";
+import { mergeCreatedTaskIntoCaches } from "@/lib/timeline/task-cache-helpers";
 
 type Step = "idle" | "range" | "notes" | "auth";
 
@@ -103,7 +104,8 @@ export function PlanCapture({
         },
       });
     },
-    onSuccess: () => {
+    onSuccess: (created) => {
+      mergeCreatedTaskIntoCaches(qc, created);
       toast.success("Plan added");
       setTitle("");
       setNotes("");

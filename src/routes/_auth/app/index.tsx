@@ -8,7 +8,7 @@ import { UpcomingTaskLines } from "@/components/timeline/upcoming-task-lines";
 import { UpcomingTasksShimmer } from "@/components/timeline/upcoming-tasks-shimmer";
 import { appSearchSchema } from "@/lib/timeline/app-search";
 import { spacesQueryOptions, tasksQueryOptions } from "@/lib/timeline/queries";
-import { defaultTaskRange } from "@/lib/timeline/range";
+import { timelineFixedRange } from "@/lib/timeline/range";
 
 const appRouteApi = getRouteApi("/_auth/app");
 
@@ -16,7 +16,7 @@ export const Route = createFileRoute("/_auth/app/")({
   component: AppIndex,
   loader: async ({ context, location }) => {
     const search = appSearchSchema.parse(location.search ?? {});
-    const range = defaultTaskRange();
+    const range = timelineFixedRange();
     await Promise.all([
       context.queryClient.ensureQueryData(spacesQueryOptions()),
       context.queryClient.ensureQueryData(
@@ -114,7 +114,7 @@ function AppIndex() {
         {initialTasksLoading ? (
           <UpcomingTasksShimmer rows={5} className="min-h-[14rem]" />
         ) : (
-          <UpcomingTaskLines tasks={tasks.data!} search={search as Record<string, unknown>} />
+          <UpcomingTaskLines tasks={tasks.data!} search={search} />
         )}
       </div>
     </div>
