@@ -1,6 +1,7 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { getRouteApi } from "@tanstack/react-router";
+import { FocusIcon } from "lucide-react";
 import { useState } from "react";
 
 import { PlanCapture } from "@/components/timeline/plan-capture";
@@ -86,9 +87,17 @@ function AppIndex() {
   return (
     <div className="space-y-12">
       <div className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Today</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Workspace</h1>
         <p className="max-w-md text-sm leading-relaxed text-muted-foreground">
-          Start with a line. We&apos;ll ask when it lives and if you want notes.
+          Capture a plan in one line. Open{" "}
+          <Link
+            to="/app/focus"
+            search={search}
+            className="font-medium text-foreground underline decoration-border/60 underline-offset-4 hover:opacity-90"
+          >
+            Focus
+          </Link>{" "}
+          for today, your activity log, and a year view of completions.
         </p>
       </div>
 
@@ -103,9 +112,19 @@ function AppIndex() {
       />
 
       <div>
-        <h2 className="mb-4 text-xs font-medium tracking-wide text-muted-foreground uppercase">
-          Upcoming
-        </h2>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+            Upcoming
+          </h2>
+          <Link
+            to="/app/focus"
+            search={search}
+            className="inline-flex items-center gap-1.5 rounded-full border border-border/50 bg-muted/25 px-2.5 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted/45 hover:text-foreground"
+          >
+            <FocusIcon className="size-3 opacity-70" aria-hidden />
+            Focus
+          </Link>
+        </div>
         {spaceRefreshing ? (
           <div
             className="mb-4 h-0.5 w-full overflow-hidden rounded-full bg-muted"

@@ -20,6 +20,10 @@ const MONTHS = [
   "Dec",
 ] as const;
 
+/** GitHub-style square size + gap (px). Fixed columns avoid squashed month labels. */
+const CELL_PX = 11;
+const GAP_PX = 3;
+
 function buildDemoCells(year: number): YearActivityCell[] {
   const cells: YearActivityCell[] = [];
   let seed = year * 1103515245 + 12345;
@@ -91,7 +95,7 @@ function buildGridDays(
   return { days, gridStart, nWeeks };
 }
 
-function monthLabelColumns(year: number, gridStart: Date, nWeeks: number) {
+function monthStartColumns(year: number, gridStart: Date, nWeeks: number) {
   const startMs = gridStart.getTime();
   const msDay = 86_400_000;
   const labels: { col: number; label: string }[] = [];
@@ -105,7 +109,14 @@ function monthLabelColumns(year: number, gridStart: Date, nWeeks: number) {
   return labels;
 }
 
-export function YearActivityWall({ hasUser }: { readonly hasUser: boolean }) {
+export function YearActivityWall({
+  hasUser,
+  variant = "default",
+}: {
+  readonly hasUser: boolean;
+  readonly variant?: "default" | "minimal" | "focus";
+}) {
+  const compact = variant === "minimal" || variant === "focus";
   const year = new Date().getUTCFullYear();
   const { data, isPending } = useQuery({
     ...yearActivityQueryOptions(year),
@@ -141,7 +152,7 @@ export function YearActivityWall({ hasUser }: { readonly hasUser: boolean }) {
   }, [days]);
 
   const monthLabels = useMemo(
-    () => monthLabelColumns(year, gridStart, nWeeks),
+    () => monthStartColumns(year, gridStart, nWeeks),
     [year, gridStart, nWeeks],
   );
 
@@ -157,38 +168,85 @@ export function YearActivityWall({ hasUser }: { readonly hasUser: boolean }) {
     ? `${totalDone} completed · due and in-progress days marked`
     : "Sample data · sign in for yours";
 
+  const showDueOngoingChrome = variant === "default";
+  const gridWidthPx = nWeeks * CELL_PX + Math.max(0, nWeeks - 1) * GAP_PX;
+
   return (
     <section
-      className={cn("border-t border-border/60 pt-8", hasUser && isPending && "opacity-60")}
+      className={cn(
+        compact ? "pt-2" : "border-t border-border/60 pt-8",
+        hasUser && isPending && "opacity-60",
+      )}
       aria-label={`Activity in ${year}`}
     >
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-3 border-b border-dashed pb-2 text-left text-[11px] font-medium tracking-wide text-muted-foreground/80 uppercase">
-        <span>Year · {year}</span>
-        <span className="font-normal tracking-normal normal-case">
-          {hasUser && isPending ? "…" : meta}
+      <div
+        className={cn(
+          "mb-5 flex flex-wrap items-end justify-between gap-3 text-left",
+          compact
+            ? "border-b border-border/25 pb-3"
+            : "border-b border-dashed border-border/60 pb-2",
+        )}
+      >
+        <span
+          className={cn(
+            "text-[11px] font-medium text-muted-foreground",
+            compact
+              ? "tracking-[0.12em] uppercase"
+              : "tracking-wide text-muted-foreground/80 uppercase",
+          )}
+        >
+          {compact ? "Completions" : `Year · ${year}`}
+        </span>
+        <span
+          className={cn(
+            "text-muted-foreground",
+            compact
+              ? "text-[12px] tracking-tight tabular-nums"
+              : "text-[11px] font-normal normal-case",
+          )}
+        >
+          {hasUser && isPending ? "…" : compact ? `${totalDone} done` : meta}
         </span>
       </div>
 
       <div className="overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        <div className="max-w-full min-w-[720px]">
+        <div style={{ width: gridWidthPx, minWidth: gridWidthPx }}>
           <div
-            className="mb-1.5 grid gap-0.5 text-[10px] font-medium tracking-wide text-muted-foreground uppercase"
-            style={{ gridTemplateColumns: `repeat(${nWeeks}, minmax(0, 1fr))` }}
+            className="flex"
+            style={{ gap: GAP_PX, width: gridWidthPx, marginBottom: GAP_PX + 1 }}
           >
             {Array.from({ length: nWeeks }, (_, col) => {
-              const label = monthLabels.find((l) => l.col === col)?.label ?? "";
+              const label = monthLabels.find((l) => l.col === col)?.label;
               return (
-                <div key={col} className="truncate text-center">
-                  {label}
+                <div
+                  key={col}
+                  className="relative shrink-0 overflow-visible"
+                  style={{ width: CELL_PX }}
+                >
+                  {label ? (
+                    <span
+                      className={cn(
+                        "pointer-events-none absolute top-0 left-0 z-10 text-[10px] leading-none whitespace-nowrap text-muted-foreground select-none",
+                        variant === "default" && "font-medium tracking-wide uppercase",
+                        (variant === "minimal" || variant === "focus") &&
+                          "font-medium tracking-tight",
+                      )}
+                    >
+                      {label}
+                    </span>
+                  ) : null}
                 </div>
               );
             })}
           </div>
+
           <div
-            className="grid gap-px bg-border/50 p-px"
+            className="grid rounded-sm bg-border/40 p-px"
             style={{
-              gridTemplateColumns: `repeat(${nWeeks}, minmax(0, 1fr))`,
-              gridTemplateRows: "repeat(7, minmax(0, 1fr))",
+              width: gridWidthPx,
+              gridTemplateColumns: `repeat(${nWeeks}, ${CELL_PX}px)`,
+              gridTemplateRows: `repeat(7, ${CELL_PX}px)`,
+              gap: GAP_PX,
               gridAutoFlow: "column",
             }}
           >
@@ -197,7 +255,8 @@ export function YearActivityWall({ hasUser }: { readonly hasUser: boolean }) {
                 return (
                   <div
                     key={d.key}
-                    className="aspect-square min-h-[8px] bg-background opacity-0"
+                    className="rounded-[2px] bg-transparent opacity-0"
+                    style={{ width: CELL_PX, height: CELL_PX }}
                     aria-hidden
                   />
                 );
@@ -212,62 +271,71 @@ export function YearActivityWall({ hasUser }: { readonly hasUser: boolean }) {
                 <div
                   key={d.key}
                   title={title}
+                  style={{ width: CELL_PX, height: CELL_PX }}
                   className={cn(
-                    "relative aspect-square min-h-[8px] bg-background",
-                    future && "bg-muted/30",
-                    !future && lv === 0 && "bg-muted/40",
-                    !future && lv === 1 && "bg-primary/20",
-                    !future && lv === 2 && "bg-primary/35",
-                    !future && lv === 3 && "bg-primary/55",
-                    !future && lv === 4 && "bg-primary/75",
-                    due && "outline outline-1 -outline-offset-1 outline-amber-500/70",
-                    ongoing &&
+                    "rounded-[2px]",
+                    future && "bg-muted/35",
+                    !future && lv === 0 && "bg-muted/50",
+                    !future && lv === 1 && "bg-primary/25",
+                    !future && lv === 2 && "bg-primary/40",
+                    !future && lv === 3 && "bg-primary/58",
+                    !future && lv === 4 && "bg-primary/78",
+                    showDueOngoingChrome &&
+                      due &&
+                      "ring-1 ring-amber-500/55 ring-inset dark:ring-amber-400/45",
+                    showDueOngoingChrome &&
+                      ongoing &&
                       !due &&
-                      "outline outline-1 -outline-offset-1 outline-emerald-600/60 dark:outline-emerald-400/55",
+                      "ring-1 ring-emerald-600/45 ring-inset dark:ring-emerald-400/40",
                   )}
-                >
-                  {ongoing && due && !future ? (
-                    <span
-                      className="absolute right-px bottom-px size-1 bg-emerald-500 dark:bg-emerald-400"
-                      aria-hidden
-                    />
-                  ) : null}
-                </div>
+                />
               );
             })}
           </div>
         </div>
       </div>
 
-      <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-1 border-t border-border/40 pt-4 text-xs text-muted-foreground">
+      <div
+        className={cn(
+          "mt-5 flex flex-wrap items-center gap-y-1 text-[11px] text-muted-foreground",
+          compact
+            ? "gap-x-3 border-t border-border/20 pt-3"
+            : "gap-x-5 border-t border-border/40 pt-4 text-xs",
+        )}
+      >
         <span>Less</span>
-        <div className="flex gap-px bg-border/50 p-px">
+        <div className="flex gap-px rounded-sm bg-border/45 p-px">
           {[0, 1, 2, 3, 4].map((lv) => (
             <div
               key={lv}
               className={cn(
-                "size-3 bg-background",
-                lv === 0 && "bg-muted/40",
-                lv === 1 && "bg-primary/20",
-                lv === 2 && "bg-primary/35",
-                lv === 3 && "bg-primary/55",
-                lv === 4 && "bg-primary/75",
+                compact ? "size-2.5" : "size-3",
+                "rounded-[2px] bg-background",
+                lv === 0 && "bg-muted/50",
+                lv === 1 && "bg-primary/25",
+                lv === 2 && "bg-primary/40",
+                lv === 3 && "bg-primary/58",
+                lv === 4 && "bg-primary/78",
               )}
             />
           ))}
         </div>
         <span>More</span>
-        <span className="text-foreground/25" aria-hidden>
-          |
-        </span>
-        <span className="inline-flex items-center gap-2">
-          <span className="inline-block size-3 bg-primary/40 outline outline-1 -outline-offset-1 outline-amber-500/70" />
-          Due
-        </span>
-        <span className="inline-flex items-center gap-2">
-          <span className="inline-block size-3 bg-primary/40 outline outline-1 -outline-offset-1 outline-emerald-600/60 dark:outline-emerald-400/55" />
-          In progress
-        </span>
+        {showDueOngoingChrome ? (
+          <>
+            <span className="text-foreground/20" aria-hidden>
+              |
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <span className="inline-block size-3 rounded-[2px] bg-primary/35 ring-1 ring-amber-500/55 ring-inset" />
+              Due
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <span className="inline-block size-3 rounded-[2px] bg-primary/35 ring-1 ring-emerald-600/45 ring-inset dark:ring-emerald-400/40" />
+              In progress
+            </span>
+          </>
+        ) : null}
       </div>
     </section>
   );

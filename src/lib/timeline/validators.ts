@@ -97,3 +97,7 @@ export const publicSlugParamSchema = z.object({
 export const yearActivityInputSchema = z.object({
   year: z.number().int().min(2000).max(2100).optional(),
 });
+
+export const recentActivityInputSchema = z.object({
+  limit: z.number().int().min(1).max(100).optional(),
+});

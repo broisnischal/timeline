@@ -16,6 +16,7 @@ import {
   updatePublicProfileSchema,
   updateSpaceSchema,
   updateTaskSchema,
+  recentActivityInputSchema,
   yearActivityInputSchema,
 } from "./validators";
 
@@ -137,6 +138,15 @@ export const $getYearActivityGrid = createServerFn({ method: "GET" })
   .handler(async ({ context, data }) => {
     const { getYearActivityGrid } = await import("./repo.server");
     return rpcSafe(await getYearActivityGrid(context.user.id, data.year));
+  });
+
+export const $listRecentActivity = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
+  .inputValidator((d: unknown) => recentActivityInputSchema.parse(d ?? {}))
+  .handler(async ({ context, data }) => {
+    const { listRecentActivityForUser } = await import("./repo.server");
+    const limit = data.limit ?? 40;
+    return rpcSafe(await listRecentActivityForUser(context.user.id, limit));
   });
 
 export const $getPublicProfile = createServerFn({ method: "GET" })

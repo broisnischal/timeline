@@ -21,8 +21,13 @@ import { Route as ApiPublicSlugRouteImport } from './routes/api/public/$slug'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as AuthAppTimelineRouteImport } from './routes/_auth/app/timeline'
 import { Route as AuthAppProfileRouteImport } from './routes/_auth/app/profile'
+import { Route as AuthAppFocusRouteImport } from './routes/_auth/app/focus'
 import { Route as AuthAppAboutRouteImport } from './routes/_auth/app/about'
+import { Route as ApiMcpV1TasksRouteImport } from './routes/api/mcp/v1/tasks'
+import { Route as ApiMcpV1SpacesRouteImport } from './routes/api/mcp/v1/spaces'
+import { Route as ApiMcpV1MeRouteImport } from './routes/api/mcp/v1/me'
 import { Route as AuthAppTasksTaskIdRouteImport } from './routes/_auth/app/tasks.$taskId'
+import { Route as ApiMcpV1TasksTaskIdRouteImport } from './routes/api/mcp/v1/tasks/$taskId'
 
 const GuestRouteRoute = GuestRouteRouteImport.update({
   id: '/_guest',
@@ -82,15 +87,40 @@ const AuthAppProfileRoute = AuthAppProfileRouteImport.update({
   path: '/profile',
   getParentRoute: () => AuthAppRouteRoute,
 } as any)
+const AuthAppFocusRoute = AuthAppFocusRouteImport.update({
+  id: '/focus',
+  path: '/focus',
+  getParentRoute: () => AuthAppRouteRoute,
+} as any)
 const AuthAppAboutRoute = AuthAppAboutRouteImport.update({
   id: '/about',
   path: '/about',
   getParentRoute: () => AuthAppRouteRoute,
 } as any)
+const ApiMcpV1TasksRoute = ApiMcpV1TasksRouteImport.update({
+  id: '/api/mcp/v1/tasks',
+  path: '/api/mcp/v1/tasks',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiMcpV1SpacesRoute = ApiMcpV1SpacesRouteImport.update({
+  id: '/api/mcp/v1/spaces',
+  path: '/api/mcp/v1/spaces',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiMcpV1MeRoute = ApiMcpV1MeRouteImport.update({
+  id: '/api/mcp/v1/me',
+  path: '/api/mcp/v1/me',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthAppTasksTaskIdRoute = AuthAppTasksTaskIdRouteImport.update({
   id: '/tasks/$taskId',
   path: '/tasks/$taskId',
   getParentRoute: () => AuthAppRouteRoute,
+} as any)
+const ApiMcpV1TasksTaskIdRoute = ApiMcpV1TasksTaskIdRouteImport.update({
+  id: '/$taskId',
+  path: '/$taskId',
+  getParentRoute: () => ApiMcpV1TasksRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -100,12 +130,17 @@ export interface FileRoutesByFullPath {
   '/signup': typeof GuestSignupRoute
   '/p/$slug': typeof PSlugRoute
   '/app/about': typeof AuthAppAboutRoute
+  '/app/focus': typeof AuthAppFocusRoute
   '/app/profile': typeof AuthAppProfileRoute
   '/app/timeline': typeof AuthAppTimelineRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/public/$slug': typeof ApiPublicSlugRoute
   '/app/': typeof AuthAppIndexRoute
   '/app/tasks/$taskId': typeof AuthAppTasksTaskIdRoute
+  '/api/mcp/v1/me': typeof ApiMcpV1MeRoute
+  '/api/mcp/v1/spaces': typeof ApiMcpV1SpacesRoute
+  '/api/mcp/v1/tasks': typeof ApiMcpV1TasksRouteWithChildren
+  '/api/mcp/v1/tasks/$taskId': typeof ApiMcpV1TasksTaskIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -113,12 +148,17 @@ export interface FileRoutesByTo {
   '/signup': typeof GuestSignupRoute
   '/p/$slug': typeof PSlugRoute
   '/app/about': typeof AuthAppAboutRoute
+  '/app/focus': typeof AuthAppFocusRoute
   '/app/profile': typeof AuthAppProfileRoute
   '/app/timeline': typeof AuthAppTimelineRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/public/$slug': typeof ApiPublicSlugRoute
   '/app': typeof AuthAppIndexRoute
   '/app/tasks/$taskId': typeof AuthAppTasksTaskIdRoute
+  '/api/mcp/v1/me': typeof ApiMcpV1MeRoute
+  '/api/mcp/v1/spaces': typeof ApiMcpV1SpacesRoute
+  '/api/mcp/v1/tasks': typeof ApiMcpV1TasksRouteWithChildren
+  '/api/mcp/v1/tasks/$taskId': typeof ApiMcpV1TasksTaskIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -130,12 +170,17 @@ export interface FileRoutesById {
   '/_guest/signup': typeof GuestSignupRoute
   '/p/$slug': typeof PSlugRoute
   '/_auth/app/about': typeof AuthAppAboutRoute
+  '/_auth/app/focus': typeof AuthAppFocusRoute
   '/_auth/app/profile': typeof AuthAppProfileRoute
   '/_auth/app/timeline': typeof AuthAppTimelineRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/public/$slug': typeof ApiPublicSlugRoute
   '/_auth/app/': typeof AuthAppIndexRoute
   '/_auth/app/tasks/$taskId': typeof AuthAppTasksTaskIdRoute
+  '/api/mcp/v1/me': typeof ApiMcpV1MeRoute
+  '/api/mcp/v1/spaces': typeof ApiMcpV1SpacesRoute
+  '/api/mcp/v1/tasks': typeof ApiMcpV1TasksRouteWithChildren
+  '/api/mcp/v1/tasks/$taskId': typeof ApiMcpV1TasksTaskIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -146,12 +191,17 @@ export interface FileRouteTypes {
     | '/signup'
     | '/p/$slug'
     | '/app/about'
+    | '/app/focus'
     | '/app/profile'
     | '/app/timeline'
     | '/api/auth/$'
     | '/api/public/$slug'
     | '/app/'
     | '/app/tasks/$taskId'
+    | '/api/mcp/v1/me'
+    | '/api/mcp/v1/spaces'
+    | '/api/mcp/v1/tasks'
+    | '/api/mcp/v1/tasks/$taskId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -159,12 +209,17 @@ export interface FileRouteTypes {
     | '/signup'
     | '/p/$slug'
     | '/app/about'
+    | '/app/focus'
     | '/app/profile'
     | '/app/timeline'
     | '/api/auth/$'
     | '/api/public/$slug'
     | '/app'
     | '/app/tasks/$taskId'
+    | '/api/mcp/v1/me'
+    | '/api/mcp/v1/spaces'
+    | '/api/mcp/v1/tasks'
+    | '/api/mcp/v1/tasks/$taskId'
   id:
     | '__root__'
     | '/'
@@ -175,12 +230,17 @@ export interface FileRouteTypes {
     | '/_guest/signup'
     | '/p/$slug'
     | '/_auth/app/about'
+    | '/_auth/app/focus'
     | '/_auth/app/profile'
     | '/_auth/app/timeline'
     | '/api/auth/$'
     | '/api/public/$slug'
     | '/_auth/app/'
     | '/_auth/app/tasks/$taskId'
+    | '/api/mcp/v1/me'
+    | '/api/mcp/v1/spaces'
+    | '/api/mcp/v1/tasks'
+    | '/api/mcp/v1/tasks/$taskId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -190,6 +250,9 @@ export interface RootRouteChildren {
   PSlugRoute: typeof PSlugRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiPublicSlugRoute: typeof ApiPublicSlugRoute
+  ApiMcpV1MeRoute: typeof ApiMcpV1MeRoute
+  ApiMcpV1SpacesRoute: typeof ApiMcpV1SpacesRoute
+  ApiMcpV1TasksRoute: typeof ApiMcpV1TasksRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -278,12 +341,40 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthAppProfileRouteImport
       parentRoute: typeof AuthAppRouteRoute
     }
+    '/_auth/app/focus': {
+      id: '/_auth/app/focus'
+      path: '/focus'
+      fullPath: '/app/focus'
+      preLoaderRoute: typeof AuthAppFocusRouteImport
+      parentRoute: typeof AuthAppRouteRoute
+    }
     '/_auth/app/about': {
       id: '/_auth/app/about'
       path: '/about'
       fullPath: '/app/about'
       preLoaderRoute: typeof AuthAppAboutRouteImport
       parentRoute: typeof AuthAppRouteRoute
+    }
+    '/api/mcp/v1/tasks': {
+      id: '/api/mcp/v1/tasks'
+      path: '/api/mcp/v1/tasks'
+      fullPath: '/api/mcp/v1/tasks'
+      preLoaderRoute: typeof ApiMcpV1TasksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/mcp/v1/spaces': {
+      id: '/api/mcp/v1/spaces'
+      path: '/api/mcp/v1/spaces'
+      fullPath: '/api/mcp/v1/spaces'
+      preLoaderRoute: typeof ApiMcpV1SpacesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/mcp/v1/me': {
+      id: '/api/mcp/v1/me'
+      path: '/api/mcp/v1/me'
+      fullPath: '/api/mcp/v1/me'
+      preLoaderRoute: typeof ApiMcpV1MeRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_auth/app/tasks/$taskId': {
       id: '/_auth/app/tasks/$taskId'
@@ -292,11 +383,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthAppTasksTaskIdRouteImport
       parentRoute: typeof AuthAppRouteRoute
     }
+    '/api/mcp/v1/tasks/$taskId': {
+      id: '/api/mcp/v1/tasks/$taskId'
+      path: '/$taskId'
+      fullPath: '/api/mcp/v1/tasks/$taskId'
+      preLoaderRoute: typeof ApiMcpV1TasksTaskIdRouteImport
+      parentRoute: typeof ApiMcpV1TasksRoute
+    }
   }
 }
 
 interface AuthAppRouteRouteChildren {
   AuthAppAboutRoute: typeof AuthAppAboutRoute
+  AuthAppFocusRoute: typeof AuthAppFocusRoute
   AuthAppProfileRoute: typeof AuthAppProfileRoute
   AuthAppTimelineRoute: typeof AuthAppTimelineRoute
   AuthAppIndexRoute: typeof AuthAppIndexRoute
@@ -305,6 +404,7 @@ interface AuthAppRouteRouteChildren {
 
 const AuthAppRouteRouteChildren: AuthAppRouteRouteChildren = {
   AuthAppAboutRoute: AuthAppAboutRoute,
+  AuthAppFocusRoute: AuthAppFocusRoute,
   AuthAppProfileRoute: AuthAppProfileRoute,
   AuthAppTimelineRoute: AuthAppTimelineRoute,
   AuthAppIndexRoute: AuthAppIndexRoute,
@@ -341,6 +441,18 @@ const GuestRouteRouteWithChildren = GuestRouteRoute._addFileChildren(
   GuestRouteRouteChildren,
 )
 
+interface ApiMcpV1TasksRouteChildren {
+  ApiMcpV1TasksTaskIdRoute: typeof ApiMcpV1TasksTaskIdRoute
+}
+
+const ApiMcpV1TasksRouteChildren: ApiMcpV1TasksRouteChildren = {
+  ApiMcpV1TasksTaskIdRoute: ApiMcpV1TasksTaskIdRoute,
+}
+
+const ApiMcpV1TasksRouteWithChildren = ApiMcpV1TasksRoute._addFileChildren(
+  ApiMcpV1TasksRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRouteRoute: AuthRouteRouteWithChildren,
@@ -348,6 +460,9 @@ const rootRouteChildren: RootRouteChildren = {
   PSlugRoute: PSlugRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiPublicSlugRoute: ApiPublicSlugRoute,
+  ApiMcpV1MeRoute: ApiMcpV1MeRoute,
+  ApiMcpV1SpacesRoute: ApiMcpV1SpacesRoute,
+  ApiMcpV1TasksRoute: ApiMcpV1TasksRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

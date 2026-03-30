@@ -1,17 +1,25 @@
 import { createFileRoute, getRouteApi, Link } from "@tanstack/react-router";
 import { ArrowLeftIcon } from "lucide-react";
 
+import { ProfileMcpSection } from "@/components/profile-mcp-section";
+import { PublicSettingsCard } from "@/components/timeline/public-settings-card";
 import { Button } from "@/components/ui/button";
 import { Kbd, KbdGroup } from "@/components/ui/kbd";
 import { useAuth } from "@/lib/auth/hooks";
 import { authQueryOptions } from "@/lib/auth/queries";
+import { mcpAccessQueryOptions } from "@/lib/mcp/queries";
+import { publicProfileQueryOptions } from "@/lib/timeline/queries";
 
 const appRouteApi = getRouteApi("/_auth/app");
 
 export const Route = createFileRoute("/_auth/app/profile")({
   component: ProfilePage,
   loader: async ({ context }) => {
-    await context.queryClient.ensureQueryData(authQueryOptions());
+    await Promise.all([
+      context.queryClient.ensureQueryData(authQueryOptions()),
+      context.queryClient.ensureQueryData(mcpAccessQueryOptions()),
+      context.queryClient.ensureQueryData(publicProfileQueryOptions()),
+    ]);
   },
 });
 
@@ -20,7 +28,7 @@ function ProfilePage() {
   const { user } = useAuth();
 
   return (
-    <div className="space-y-8">
+    <div className="scroll-mt-24 space-y-8">
       <div>
         <Button
           nativeButton={false}
@@ -34,9 +42,16 @@ function ProfilePage() {
         </Button>
         <h1 className="mt-4 text-2xl font-semibold tracking-tight">Profile</h1>
         <p className="mt-1 max-w-lg text-sm leading-relaxed text-muted-foreground">
-          Account details and preferences will live here. Public profile and activity moved to this
-          page in a future update.
+          Public page, email, and MCP settings for your workspace.
         </p>
+      </div>
+
+      <div className="max-w-2xl">
+        <PublicSettingsCard />
+      </div>
+
+      <div className="max-w-2xl">
+        <ProfileMcpSection />
       </div>
 
       <dl className="max-w-md space-y-4 border-t border-border/60 pt-6">
@@ -85,6 +100,14 @@ function ProfilePage() {
               <Kbd>Mod</Kbd>
               <Kbd>Shift</Kbd>
               <Kbd>T</Kbd>
+            </KbdGroup>
+          </li>
+          <li className="flex items-center justify-between gap-4">
+            <span>Focus</span>
+            <KbdGroup>
+              <Kbd>Mod</Kbd>
+              <Kbd>Shift</Kbd>
+              <Kbd>F</Kbd>
             </KbdGroup>
           </li>
           <li className="flex items-center justify-between gap-4">

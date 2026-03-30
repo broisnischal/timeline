@@ -1,10 +1,11 @@
 import { useHotkeys } from "@tanstack/react-hotkeys";
 import { createFileRoute, Link, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
 import { getRouteApi } from "@tanstack/react-router";
-import { CalendarDaysIcon, LayoutGridIcon } from "lucide-react";
+import { CalendarDaysIcon, FocusIcon, LayoutGridIcon } from "lucide-react";
 
 import { AppUserMenu } from "@/components/app-user-menu";
 import { useTheme } from "@/components/theme-provider";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { AppSpaceDropdown } from "@/components/timeline/app-space-dropdown";
 import { THEME_TOGGLE_HOTKEY } from "@/lib/site";
 import { appSearchSchema } from "@/lib/timeline/app-search";
@@ -27,6 +28,7 @@ function AppLayout() {
   const search = appRouteApi.useSearch();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isHome = pathname === "/app" || pathname === "/app/";
+  const isFocus = pathname === "/app/focus" || pathname === "/app/focus/";
   const isTimeline = pathname.startsWith("/app/timeline") || pathname.startsWith("/app/tasks/");
 
   useHotkeys(
@@ -50,6 +52,12 @@ function AppLayout() {
         },
       },
       {
+        hotkey: "Mod+Shift+F",
+        callback: () => {
+          void router.navigate({ to: "/app/focus", search });
+        },
+      },
+      {
         hotkey: THEME_TOGGLE_HOTKEY,
         callback: () => {
           if (typeof document === "undefined") return;
@@ -60,6 +68,31 @@ function AppLayout() {
     ],
     { preventDefault: true },
   );
+
+  if (isFocus) {
+    return (
+      <div className="relative min-h-svh bg-background text-foreground">
+        <div
+          className="pointer-events-none fixed inset-0 bg-[radial-gradient(ellipse_75%_45%_at_50%_-15%,hsl(var(--primary)/0.07),transparent)]"
+          aria-hidden
+        />
+        <div className="pointer-events-auto fixed top-4 left-4 z-50 flex items-center gap-2">
+          <Link
+            to="/app"
+            search={search}
+            className="rounded-full border border-border/45 bg-background/85 px-3 py-1.5 text-sm text-muted-foreground shadow-sm backdrop-blur-sm transition-[color,background-color] hover:bg-muted/55 hover:text-foreground"
+          >
+            Workspace
+          </Link>
+          <ThemeToggle />
+        </div>
+        <div className="pointer-events-auto fixed top-4 right-4 z-50">
+          <AppUserMenu />
+        </div>
+        <Outlet />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-svh bg-background">
@@ -96,6 +129,18 @@ function AppLayout() {
             >
               <LayoutGridIcon className="size-3.5 shrink-0 opacity-70" aria-hidden />
               <span className="hidden sm:inline">Home</span>
+            </Link>
+            <Link
+              to="/app/focus"
+              search={search}
+              aria-label="Focus"
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-sm transition-[color,background-color,box-shadow] duration-200 ease-out sm:px-3",
+                "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <FocusIcon className="size-3.5 shrink-0 opacity-70" aria-hidden />
+              <span className="hidden sm:inline">Focus</span>
             </Link>
             <Link
               to="/app/timeline"

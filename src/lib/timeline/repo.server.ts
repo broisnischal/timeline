@@ -14,6 +14,7 @@ import {
 } from "drizzle-orm";
 
 import { db } from "@/lib/db";
+import { user } from "@/lib/db/schema/auth.schema";
 import {
   type TaskActivityEntry,
   type TaskSubtask,
@@ -293,6 +294,47 @@ export async function updateTaskRow(
 
   const row = await db.select().from(task).where(eq(task.id, input.id));
   return row[0]!;
+}
+
+export type ActivityFeedEntry = {
+  entryId: string;
+  at: string;
+  body: string;
+  taskId: string;
+  taskTitle: string;
+  spaceName: string;
+};
+
+/** Recent activity log lines across all tasks, newest first. */
+export async function listRecentActivityForUser(userId: string, limit: number) {
+  const cap = Math.min(100, Math.max(1, limit));
+  const rows = await db
+    .select({
+      id: task.id,
+      title: task.title,
+      activityLog: task.activityLog,
+      spaceName: space.name,
+    })
+    .from(task)
+    .innerJoin(space, eq(task.spaceId, space.id))
+    .where(eq(task.userId, userId));
+
+  const out: ActivityFeedEntry[] = [];
+  for (const r of rows) {
+    const log = (r.activityLog as TaskActivityEntry[]) ?? [];
+    for (const e of log) {
+      out.push({
+        entryId: e.id,
+        at: e.at,
+        body: e.body,
+        taskId: r.id,
+        taskTitle: r.title,
+        spaceName: r.spaceName,
+      });
+    }
+  }
+  out.sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
+  return out.slice(0, cap);
 }
 
 export async function appendTaskActivityRow(userId: string, taskId: string, body: string) {
@@ -640,16 +682,23 @@ export async function upsertPublicProfile(userId: string, slug: string, enabled:
 }
 
 export async function getPublicTasksBySlug(slug: string) {
-  const [profile] = await db
-    .select()
+  const [row] = await db
+    .select({
+      profile: publicProfile,
+      ownerName: user.name,
+      ownerImage: user.image,
+    })
     .from(publicProfile)
+    .innerJoin(user, eq(publicProfile.userId, user.id))
     .where(eq(publicProfile.slug, slug))
     .limit(1);
-  if (!profile?.enabled) return null;
+  if (!row?.profile.enabled) return null;
+  const { profile } = row;
   const tasks = await db
     .select({
       ...getTableColumns(task),
       spaceName: space.name,
+      spaceColor: space.color,
     })
     .from(task)
     .innerJoin(space, eq(task.spaceId, space.id))
@@ -661,5 +710,9 @@ export async function getPublicTasksBySlug(slug: string) {
       ),
     )
     .orderBy(desc(task.dueAt), desc(task.startsAt), desc(task.createdAt));
-  return { profile, tasks };
+  return {
+    profile,
+    owner: { name: row.ownerName, image: row.ownerImage },
+    tasks,
+  };
 }

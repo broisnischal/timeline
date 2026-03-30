@@ -5,6 +5,7 @@ import {
   $getStreakStats,
   $getTask,
   $getYearActivityGrid,
+  $listRecentActivity,
   $listSpaces,
   $listTasks,
 } from "./functions";
@@ -25,6 +26,12 @@ export const yearActivityQueryOptions = (year?: number) =>
   queryOptions({
     queryKey: ["yearActivity", year ?? "current"] as const,
     queryFn: ({ signal }) => $getYearActivityGrid({ data: { year }, signal }),
+  });
+
+export const recentActivityQueryOptions = (limit?: number) =>
+  queryOptions({
+    queryKey: ["recentActivity", limit ?? 40] as const,
+    queryFn: ({ signal }) => $listRecentActivity({ data: { limit }, signal }),
   });
 
 export const publicProfileQueryOptions = () =>

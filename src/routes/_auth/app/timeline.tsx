@@ -113,10 +113,6 @@ function TimelinePage() {
 
   return (
     <div className="space-y-5">
-      <header>
-        <h1 className="text-xl font-semibold tracking-tight">Timeline</h1>
-      </header>
-
       <TimelineToolbar search={search} />
 
       {spaceRefreshing ? (

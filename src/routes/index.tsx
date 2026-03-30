@@ -70,7 +70,7 @@ function HomePage() {
             Calm task & timeline workspace
           </p>
           <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">
-            Organize what you will do — not just what you saved.
+            Organize what you will do.
           </h1>
           <p className="mx-auto mt-5 max-w-lg text-lg leading-relaxed text-muted-foreground">
             Add a plan in one line. Pick a date range, drop a note, and you&apos;re done.
