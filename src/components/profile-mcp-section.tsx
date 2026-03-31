@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { env } from "@/env/client";
+import { clientOrigin } from "@/env/client";
 import { $enableMcpAccess, $revokeMcpAccess, $rotateMcpKey } from "@/lib/mcp/functions";
 import { mcpKeyFingerprint } from "@/lib/mcp/key-display";
 import { mcpAccessQueryOptions } from "@/lib/mcp/queries";
@@ -80,7 +80,7 @@ function McpSetupGuide({
   open: boolean;
   onOpenChange: (o: boolean) => void;
 }) {
-  const origin = env.VITE_BASE_URL.replace(/\/$/, "");
+  const origin = clientOrigin;
   const streamUrl = `${origin}/v1/mcp`;
   const apiBase = `${origin}/api/mcp/v1`;
   const timelineObject = `{
@@ -292,7 +292,7 @@ export const ProfileMcpSection = memo(function ProfileMcpSection() {
 
   const enabled = data?.enabled ?? false;
   const busy = enableMut.isPending || rotateMut.isPending || revokeMut.isPending;
-  const origin = env.VITE_BASE_URL.replace(/\/$/, "");
+  const origin = clientOrigin;
   const mcpStreamUrl = `${origin}/v1/mcp`;
   const apiBase = `${origin}/api/mcp/v1`;
   const bearerExample = "Authorization: Bearer <token>";

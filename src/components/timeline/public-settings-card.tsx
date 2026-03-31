@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { env } from "@/env/client";
+import { clientOrigin } from "@/env/client";
 import { $updatePublicProfile } from "@/lib/timeline/functions";
 import { publicProfileQueryOptions, spacesQueryOptions } from "@/lib/timeline/queries";
 
@@ -34,7 +34,7 @@ export function PublicSettingsCard() {
     onError: (e: Error) => toast.error(e.message || "Could not save"),
   });
 
-  const origin = env.VITE_BASE_URL.replace(/\/$/, "");
+  const origin = clientOrigin;
   const publicUrl = slug ? `${origin}/p/${slug}` : "";
   const publicSpaces = (spaces ?? []).filter((s) => s.isPublic && s.publicSlug);
   const onToggleEnabled = (checked: boolean) => {

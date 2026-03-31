@@ -4,7 +4,11 @@ import * as z from "zod";
 export const env = createEnv({
   clientPrefix: "VITE_",
   client: {
-    VITE_BASE_URL: z.url(),
+    VITE_BASE_URL: z.url().optional(),
   },
   runtimeEnv: import.meta.env,
 });
+
+export const clientOrigin =
+  env.VITE_BASE_URL?.replace(/\/$/, "") ??
+  (typeof window !== "undefined" ? window.location.origin.replace(/\/$/, "") : "");
