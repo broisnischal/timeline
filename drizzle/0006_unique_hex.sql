@@ -1,3 +1,3 @@
-ALTER TABLE "space" ADD COLUMN "is_public" boolean DEFAULT false NOT NULL;--> statement-breakpoint
-ALTER TABLE "space" ADD COLUMN "public_slug" text;--> statement-breakpoint
-ALTER TABLE "space" ADD CONSTRAINT "space_public_slug_unique" UNIQUE("public_slug");
+ALTER TABLE "space" ADD COLUMN IF NOT EXISTS "is_public" boolean DEFAULT false NOT NULL;--> statement-breakpoint
+ALTER TABLE "space" ADD COLUMN IF NOT EXISTS "public_slug" text;--> statement-breakpoint
+CREATE UNIQUE INDEX IF NOT EXISTS "space_public_slug_unique" ON "space" USING btree ("public_slug");

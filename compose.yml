@@ -29,7 +29,7 @@ services:
       db:
         condition: service_healthy
     command: >
-      sh -lc "HUSKY=0 bun install --frozen-lockfile && bun run db migrate"
+      sh -lc "HUSKY=0 bun install --frozen-lockfile && bun run db generate && bun run db migrate"
     restart: "no"
 
   app:
