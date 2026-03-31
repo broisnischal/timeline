@@ -8,6 +8,8 @@ RUN bun install --frozen-lockfile
 
 # Build Nitro output.
 COPY . .
+ARG VITE_BASE_URL
+ENV VITE_BASE_URL=$VITE_BASE_URL
 RUN NITRO_PRESET=node-server bun run build
 
 FROM node:24-alpine AS runtime

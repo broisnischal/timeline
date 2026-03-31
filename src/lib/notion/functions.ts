@@ -1,7 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import * as z from "zod";
 
-import { env } from "@/env/server";
 import { freshAuthMiddleware, authMiddleware } from "@/lib/auth/middleware";
 import { rpcSafe } from "@/lib/timeline/rpc-safe";
 
@@ -25,6 +24,8 @@ const pushSchema = z.object({
   databaseId: z.string().trim().min(1).optional(),
 });
 
+const notionConnectPath = "/api/integrations/notion/connect";
+
 export const $getNotionStatus = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .handler(async ({ context }) => {
@@ -32,7 +33,7 @@ export const $getNotionStatus = createServerFn({ method: "GET" })
     if (!row) {
       return {
         connected: false as const,
-        connectUrl: `${env.VITE_BASE_URL.replace(/\/$/, "")}/api/integrations/notion/connect`,
+        connectUrl: notionConnectPath,
       };
     }
     return rpcSafe({
@@ -42,7 +43,7 @@ export const $getNotionStatus = createServerFn({ method: "GET" })
       selectedDatabaseId: row.selectedDatabaseId,
       lastImportedAt: row.lastImportedAt?.toISOString() ?? null,
       lastPushedAt: row.lastPushedAt?.toISOString() ?? null,
-      connectUrl: `${env.VITE_BASE_URL.replace(/\/$/, "")}/api/integrations/notion/connect`,
+      connectUrl: notionConnectPath,
     });
   });
 
