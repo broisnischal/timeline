@@ -1,14 +1,8 @@
-import { createEnv } from "@t3-oss/env-core";
-import * as z from "zod";
+const rawBaseUrl = import.meta.env.VITE_BASE_URL;
 
-export const env = createEnv({
-  clientPrefix: "VITE_",
-  client: {
-    VITE_BASE_URL: z.url().optional(),
-  },
-  runtimeEnv: import.meta.env,
-});
+const normalizedBaseUrl =
+  typeof rawBaseUrl === "string" && rawBaseUrl.trim().length > 0 ? rawBaseUrl : undefined;
 
-export const clientOrigin =
-  env.VITE_BASE_URL?.replace(/\/$/, "") ??
-  (typeof window !== "undefined" ? window.location.origin.replace(/\/$/, "") : "");
+export const clientOrigin = (
+  normalizedBaseUrl ?? (typeof window !== "undefined" ? window.location.origin : "")
+).replace(/\/$/, "");
