@@ -6,3 +6,5 @@ const normalizedBaseUrl =
 export const clientOrigin = (
   normalizedBaseUrl ?? (typeof window !== "undefined" ? window.location.origin : "")
 ).replace(/\/$/, "");
+
+console.log("clientOrigin", clientOrigin);
