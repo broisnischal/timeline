@@ -3,7 +3,9 @@ import { createFileRoute, getRouteApi, Link } from "@tanstack/react-router";
 import { ArrowLeftIcon, Loader2Icon, UploadIcon, UserIcon } from "lucide-react";
 import { toast } from "sonner";
 
+import { ProfileCollabSection } from "@/components/profile-collab-section";
 import { ProfileMcpSection } from "@/components/profile-mcp-section";
+import { ProfileNotionSection } from "@/components/profile-notion-section";
 import { PublicSettingsCard } from "@/components/timeline/public-settings-card";
 import { Button } from "@/components/ui/button";
 import { Kbd, KbdGroup } from "@/components/ui/kbd";
@@ -11,7 +13,8 @@ import { $updateUserImage } from "@/lib/auth/functions";
 import { useAuth } from "@/lib/auth/hooks";
 import { authQueryOptions } from "@/lib/auth/queries";
 import { mcpAccessQueryOptions } from "@/lib/mcp/queries";
-import { publicProfileQueryOptions } from "@/lib/timeline/queries";
+import { notionStatusQueryOptions } from "@/lib/notion/queries";
+import { myPendingInvitesQueryOptions, publicProfileQueryOptions } from "@/lib/timeline/queries";
 
 const appRouteApi = getRouteApi("/_auth/app");
 
@@ -21,7 +24,9 @@ export const Route = createFileRoute("/_auth/app/profile")({
     await Promise.all([
       context.queryClient.ensureQueryData(authQueryOptions()),
       context.queryClient.ensureQueryData(mcpAccessQueryOptions()),
+      context.queryClient.ensureQueryData(notionStatusQueryOptions()),
       context.queryClient.ensureQueryData(publicProfileQueryOptions()),
+      context.queryClient.ensureQueryData(myPendingInvitesQueryOptions()),
     ]);
   },
 });
@@ -93,6 +98,14 @@ function ProfilePage() {
 
       <div className="max-w-2xl">
         <ProfileMcpSection />
+      </div>
+
+      <div className="max-w-2xl">
+        <ProfileNotionSection />
+      </div>
+
+      <div className="max-w-2xl">
+        <ProfileCollabSection />
       </div>
 
       <section className="max-w-2xl space-y-4 border-t border-border/60 pt-6">

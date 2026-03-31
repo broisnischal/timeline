@@ -1,6 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getRouteApi, useRouter, useRouterState } from "@tanstack/react-router";
-import { ChevronDownIcon, FolderIcon, PlusIcon, Trash2Icon } from "lucide-react";
+import {
+  ChevronDownIcon,
+  FolderIcon,
+  PlusIcon,
+  Trash2Icon,
+  UserPlusIcon,
+  UsersIcon,
+} from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -28,9 +35,15 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import type { AppSearch } from "@/lib/timeline/app-search";
-import { $createSpace, $deleteSpace } from "@/lib/timeline/functions";
-import { spacesQueryOptions } from "@/lib/timeline/queries";
+import {
+  $createSpace,
+  $deleteSpace,
+  $inviteSpaceMember,
+  $revokeSpaceInvite,
+} from "@/lib/timeline/functions";
+import { spaceCollaboratorsQueryOptions, spacesQueryOptions } from "@/lib/timeline/queries";
 import { isHexColor } from "@/lib/timeline/task-appearance";
 import { cn } from "@/lib/utils";
 
@@ -38,6 +51,17 @@ const appRouteApi = getRouteApi("/_auth/app");
 
 const ALL_VALUE = "__all__";
 const DELETE_CONFIRM_WORD = "confirm";
+
+function slugifySpaceName(input: string) {
+  return input
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 32);
+}
 
 function mergeSearch(current: AppSearch, spaceId: string | undefined): AppSearch {
   const { space: _omit, ...rest } = current;
@@ -53,14 +77,24 @@ export function AppSpaceDropdown() {
   const [newOpen, setNewOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [shareOpen, setShareOpen] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
   const [name, setName] = useState("");
   const [pickedColor, setPickedColor] = useState<string | null>(null);
+  const [isPublicSpace, setIsPublicSpace] = useState(false);
+  const [publicSlug, setPublicSlug] = useState("");
 
   const baseTo = pathname.startsWith("/app/timeline") ? "/app/timeline" : "/app";
   const activeSpace = search.space ?? "";
   const activeSpaceRow = activeSpace ? spaces?.find((s) => s.id === activeSpace) : undefined;
   const currentName = !activeSpace ? "All" : (activeSpaceRow?.name ?? "Space");
   const canDeleteActiveSpace = Boolean(activeSpace && activeSpaceRow && !activeSpaceRow.isDefault);
+  const canShareActiveSpace = Boolean(activeSpace && activeSpaceRow?.isOwner);
+  const shareTargetSpaceId = activeSpace || "";
+  const collabQuery = useQuery({
+    ...spaceCollaboratorsQueryOptions(shareTargetSpaceId),
+    enabled: shareOpen && Boolean(shareTargetSpaceId),
+  });
 
   const createMut = useMutation({
     mutationFn: () =>
@@ -68,14 +102,22 @@ export function AppSpaceDropdown() {
         data: {
           name: name.trim(),
           ...(pickedColor && isHexColor(pickedColor) ? { color: pickedColor } : {}),
+          ...(isPublicSpace ? { isPublic: true, publicSlug: publicSlug.trim() } : {}),
         },
       }),
-    onSuccess: () => {
+    onSuccess: (created) => {
       setName("");
       setPickedColor(null);
+      setIsPublicSpace(false);
+      setPublicSlug("");
       setNewOpen(false);
       toast.success("Space created");
       void qc.invalidateQueries({ queryKey: ["spaces"] });
+      void qc.invalidateQueries({ queryKey: ["tasks"] });
+      void router.navigate({
+        to: baseTo,
+        search: mergeSearch(search, created.id),
+      });
     },
     onError: (e: Error) => toast.error(e.message || "Could not create"),
   });
@@ -98,6 +140,28 @@ export function AppSpaceDropdown() {
       }
     },
     onError: (e: Error) => toast.error(e.message || "Could not delete space"),
+  });
+
+  const inviteMut = useMutation({
+    mutationFn: () =>
+      $inviteSpaceMember({
+        data: { spaceId: shareTargetSpaceId, email: inviteEmail.trim().toLowerCase() },
+      }),
+    onSuccess: () => {
+      setInviteEmail("");
+      toast.success("Invite sent");
+      void qc.invalidateQueries({ queryKey: ["spaceCollaborators", shareTargetSpaceId] });
+    },
+    onError: (e: Error) => toast.error(e.message || "Could not send invite"),
+  });
+
+  const revokeInviteMut = useMutation({
+    mutationFn: (inviteId: string) => $revokeSpaceInvite({ data: { inviteId } }),
+    onSuccess: () => {
+      toast.success("Invite revoked");
+      void qc.invalidateQueries({ queryKey: ["spaceCollaborators", shareTargetSpaceId] });
+    },
+    onError: (e: Error) => toast.error(e.message || "Could not revoke invite"),
   });
 
   const navigateToSpace = (raw: string) => {
@@ -176,6 +240,18 @@ export function AppSpaceDropdown() {
               </DropdownMenuRadioGroup>
             </DropdownMenuGroup>
             <DropdownMenuSeparator className="my-1.5 bg-border/60" />
+            {canShareActiveSpace ? (
+              <DropdownMenuItem
+                className="cursor-pointer gap-2 rounded-xl py-2"
+                onClick={() => {
+                  setInviteEmail("");
+                  setShareOpen(true);
+                }}
+              >
+                <UsersIcon className="size-3.5 opacity-90" aria-hidden />
+                Share this space
+              </DropdownMenuItem>
+            ) : null}
             {canDeleteActiveSpace ? (
               <DropdownMenuItem
                 className="cursor-pointer gap-2 rounded-xl py-2 text-destructive focus:text-destructive"
@@ -193,6 +269,8 @@ export function AppSpaceDropdown() {
               onClick={() => {
                 setName("");
                 setPickedColor(null);
+                setIsPublicSpace(false);
+                setPublicSlug("");
                 setNewOpen(true);
               }}
             >
@@ -210,6 +288,8 @@ export function AppSpaceDropdown() {
           if (!open) {
             setName("");
             setPickedColor(null);
+            setIsPublicSpace(false);
+            setPublicSlug("");
           }
         }}
       >
@@ -238,12 +318,49 @@ export function AppSpaceDropdown() {
               <Input
                 id="app-new-space-name"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => {
+                  const next = e.target.value;
+                  setName(next);
+                  if (isPublicSpace && !publicSlug.trim()) {
+                    setPublicSlug(slugifySpaceName(next));
+                  }
+                }}
                 placeholder="Name"
                 autoComplete="off"
                 className="h-8 rounded-md text-sm"
               />
             </div>
+            <div className="flex items-center justify-between rounded-md border border-border/50 bg-muted/15 px-2.5 py-2">
+              <Label htmlFor="space-public-toggle" className="text-[11px] text-muted-foreground">
+                Public space feed
+              </Label>
+              <Switch
+                id="space-public-toggle"
+                checked={isPublicSpace}
+                onCheckedChange={(checked) => {
+                  setIsPublicSpace(checked);
+                  if (checked && !publicSlug.trim()) setPublicSlug(slugifySpaceName(name));
+                }}
+              />
+            </div>
+            {isPublicSpace ? (
+              <div className="space-y-1">
+                <Label
+                  htmlFor="app-new-space-public-slug"
+                  className="text-[11px] text-muted-foreground"
+                >
+                  Public slug
+                </Label>
+                <Input
+                  id="app-new-space-public-slug"
+                  value={publicSlug}
+                  onChange={(e) => setPublicSlug(slugifySpaceName(e.target.value))}
+                  placeholder="news"
+                  autoComplete="off"
+                  className="h-8 rounded-md text-sm"
+                />
+              </div>
+            ) : null}
             <div className="space-y-1.5">
               <p className="text-[11px] text-muted-foreground">Color (optional)</p>
               <AccentColorPicker
@@ -267,12 +384,116 @@ export function AppSpaceDropdown() {
                 type="submit"
                 size="sm"
                 className="h-8 rounded-md px-4 text-[13px] font-medium shadow-none"
-                disabled={!name.trim() || createMut.isPending}
+                disabled={
+                  !name.trim() || (isPublicSpace && !publicSlug.trim()) || createMut.isPending
+                }
               >
                 Create
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={shareOpen}
+        onOpenChange={(open) => {
+          setShareOpen(open);
+          if (!open) setInviteEmail("");
+        }}
+      >
+        <DialogContent
+          showCloseButton
+          className="w-[min(100%,28rem)] max-w-[28rem] gap-0 overflow-hidden rounded-lg border border-border/40 p-0 shadow-[0_8px_30px_rgba(15,15,15,0.08)] ring-0 sm:max-w-[28rem]"
+        >
+          <DialogHeader className="border-b border-border/40 px-4 py-3 pr-10">
+            <p className="text-[10px] font-medium tracking-[0.1em] text-muted-foreground uppercase">
+              Share
+            </p>
+            <DialogTitle className="mt-1 text-sm font-semibold tracking-tight">
+              {activeSpaceRow?.name ?? "Space"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 px-4 py-3">
+            <form
+              className="flex items-center gap-2"
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (!inviteEmail.trim() || !shareTargetSpaceId) return;
+                inviteMut.mutate();
+              }}
+            >
+              <Input
+                value={inviteEmail}
+                onChange={(e) => setInviteEmail(e.target.value)}
+                placeholder="user@email.com"
+                type="email"
+                autoComplete="off"
+                className="h-8 rounded-md text-sm"
+              />
+              <Button
+                type="submit"
+                size="sm"
+                className="h-8 shrink-0 rounded-md px-3"
+                disabled={!inviteEmail.trim() || inviteMut.isPending || !shareTargetSpaceId}
+              >
+                <UserPlusIcon className="mr-1 size-3.5" aria-hidden />
+                Invite
+              </Button>
+            </form>
+
+            <div className="space-y-2">
+              <p className="text-[11px] text-muted-foreground">Members</p>
+              {collabQuery.isPending ? (
+                <p className="text-xs text-muted-foreground">Loading...</p>
+              ) : collabQuery.data?.members?.length ? (
+                <div className="space-y-1.5">
+                  {collabQuery.data.members.map((m) => (
+                    <div
+                      key={`${m.id}-${m.role}`}
+                      className="flex items-center justify-between rounded-md border border-border/50 px-2.5 py-2"
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate text-sm">{m.name || m.email}</p>
+                        <p className="truncate text-[11px] text-muted-foreground">{m.email}</p>
+                      </div>
+                      <span className="text-[11px] text-muted-foreground capitalize">{m.role}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">No members yet.</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-[11px] text-muted-foreground">Pending invites</p>
+              {collabQuery.data?.invites?.length ? (
+                <div className="space-y-1.5">
+                  {collabQuery.data.invites.map((inv) => (
+                    <div
+                      key={inv.id}
+                      className="flex items-center justify-between rounded-md border border-border/50 px-2.5 py-2"
+                    >
+                      <p className="truncate text-sm">{inv.invitedEmail}</p>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 rounded-md px-2 text-xs"
+                        disabled={revokeInviteMut.isPending}
+                        onClick={() => revokeInviteMut.mutate(inv.id)}
+                      >
+                        Revoke
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">No pending invites.</p>
+              )}
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 

@@ -110,7 +110,7 @@ export function TimelineToolbar({ search }: { readonly search: AppSearch }) {
           title="Focus search — ⌘F or Ctrl+F"
           aria-describedby={hintId}
           className={cn(
-            "h-9 rounded-full border border-border/50 bg-muted/15 py-1 pr-[4.25rem] pl-9 text-sm shadow-none",
+            "h-9 rounded-full border border-border/50 bg-muted/15 py-1 pr-17 pl-9 text-sm shadow-none",
             "placeholder:text-muted-foreground/70",
             "focus-visible:border-border focus-visible:ring-1 focus-visible:ring-ring/35",
           )}
@@ -121,7 +121,7 @@ export function TimelineToolbar({ search }: { readonly search: AppSearch }) {
         >
           <KbdGroup className="opacity-60">
             <Kbd className="h-4 min-w-6 px-1 text-[10px]">Ctrl</Kbd>
-            <Kbd className="h-4 min-w-[1.125rem] px-1 text-[10px]">F</Kbd>
+            <Kbd className="h-4 min-w-4.5 px-1 text-[10px]">F</Kbd>
           </KbdGroup>
         </span>
       </div>
@@ -144,7 +144,7 @@ export function TimelineToolbar({ search }: { readonly search: AppSearch }) {
           <span className="text-xs text-foreground tabular-nums">{RANGE_SHORT[activeRange]}</span>
           <ChevronDownIcon className="size-3.5 opacity-55" aria-hidden />
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="min-w-[11rem]">
+        <DropdownMenuContent align="end" className="min-w-44">
           <DropdownMenuGroup>
             <DropdownMenuRadioGroup
               value={activeRange}

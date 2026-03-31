@@ -58,6 +58,18 @@ function AppLayout() {
         },
       },
       {
+        hotkey: "Mod+Shift+L",
+        callback: () => {
+          void router.navigate({ to: "/app/learning", search });
+        },
+      },
+      {
+        hotkey: "Mod+Shift+K",
+        callback: () => {
+          void router.navigate({ to: "/app/shortcuts", search });
+        },
+      },
+      {
         hotkey: THEME_TOGGLE_HOTKEY,
         callback: () => {
           if (typeof document === "undefined") return;

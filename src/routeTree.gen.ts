@@ -21,12 +21,16 @@ import { Route as AuthAppIndexRouteImport } from './routes/_auth/app/index'
 import { Route as ApiPublicSlugRouteImport } from './routes/api/public/$slug'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as AuthAppTimelineRouteImport } from './routes/_auth/app/timeline'
+import { Route as AuthAppShortcutsRouteImport } from './routes/_auth/app/shortcuts'
 import { Route as AuthAppProfileRouteImport } from './routes/_auth/app/profile'
+import { Route as AuthAppLearningRouteImport } from './routes/_auth/app/learning'
 import { Route as AuthAppFocusRouteImport } from './routes/_auth/app/focus'
 import { Route as AuthAppAboutRouteImport } from './routes/_auth/app/about'
 import { Route as ApiMcpV1TasksRouteImport } from './routes/api/mcp/v1/tasks'
 import { Route as ApiMcpV1SpacesRouteImport } from './routes/api/mcp/v1/spaces'
 import { Route as ApiMcpV1MeRouteImport } from './routes/api/mcp/v1/me'
+import { Route as ApiIntegrationsNotionConnectRouteImport } from './routes/api/integrations/notion/connect'
+import { Route as ApiIntegrationsNotionCallbackRouteImport } from './routes/api/integrations/notion/callback'
 import { Route as AuthAppTasksTaskIdRouteImport } from './routes/_auth/app/tasks.$taskId'
 import { Route as ApiMcpV1TasksTaskIdRouteImport } from './routes/api/mcp/v1/tasks/$taskId'
 
@@ -88,9 +92,19 @@ const AuthAppTimelineRoute = AuthAppTimelineRouteImport.update({
   path: '/timeline',
   getParentRoute: () => AuthAppRouteRoute,
 } as any)
+const AuthAppShortcutsRoute = AuthAppShortcutsRouteImport.update({
+  id: '/shortcuts',
+  path: '/shortcuts',
+  getParentRoute: () => AuthAppRouteRoute,
+} as any)
 const AuthAppProfileRoute = AuthAppProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => AuthAppRouteRoute,
+} as any)
+const AuthAppLearningRoute = AuthAppLearningRouteImport.update({
+  id: '/learning',
+  path: '/learning',
   getParentRoute: () => AuthAppRouteRoute,
 } as any)
 const AuthAppFocusRoute = AuthAppFocusRouteImport.update({
@@ -118,6 +132,18 @@ const ApiMcpV1MeRoute = ApiMcpV1MeRouteImport.update({
   path: '/api/mcp/v1/me',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiIntegrationsNotionConnectRoute =
+  ApiIntegrationsNotionConnectRouteImport.update({
+    id: '/api/integrations/notion/connect',
+    path: '/api/integrations/notion/connect',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiIntegrationsNotionCallbackRoute =
+  ApiIntegrationsNotionCallbackRouteImport.update({
+    id: '/api/integrations/notion/callback',
+    path: '/api/integrations/notion/callback',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthAppTasksTaskIdRoute = AuthAppTasksTaskIdRouteImport.update({
   id: '/tasks/$taskId',
   path: '/tasks/$taskId',
@@ -138,12 +164,16 @@ export interface FileRoutesByFullPath {
   '/v1/mcp': typeof V1McpRoute
   '/app/about': typeof AuthAppAboutRoute
   '/app/focus': typeof AuthAppFocusRoute
+  '/app/learning': typeof AuthAppLearningRoute
   '/app/profile': typeof AuthAppProfileRoute
+  '/app/shortcuts': typeof AuthAppShortcutsRoute
   '/app/timeline': typeof AuthAppTimelineRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/public/$slug': typeof ApiPublicSlugRoute
   '/app/': typeof AuthAppIndexRoute
   '/app/tasks/$taskId': typeof AuthAppTasksTaskIdRoute
+  '/api/integrations/notion/callback': typeof ApiIntegrationsNotionCallbackRoute
+  '/api/integrations/notion/connect': typeof ApiIntegrationsNotionConnectRoute
   '/api/mcp/v1/me': typeof ApiMcpV1MeRoute
   '/api/mcp/v1/spaces': typeof ApiMcpV1SpacesRoute
   '/api/mcp/v1/tasks': typeof ApiMcpV1TasksRouteWithChildren
@@ -157,12 +187,16 @@ export interface FileRoutesByTo {
   '/v1/mcp': typeof V1McpRoute
   '/app/about': typeof AuthAppAboutRoute
   '/app/focus': typeof AuthAppFocusRoute
+  '/app/learning': typeof AuthAppLearningRoute
   '/app/profile': typeof AuthAppProfileRoute
+  '/app/shortcuts': typeof AuthAppShortcutsRoute
   '/app/timeline': typeof AuthAppTimelineRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/public/$slug': typeof ApiPublicSlugRoute
   '/app': typeof AuthAppIndexRoute
   '/app/tasks/$taskId': typeof AuthAppTasksTaskIdRoute
+  '/api/integrations/notion/callback': typeof ApiIntegrationsNotionCallbackRoute
+  '/api/integrations/notion/connect': typeof ApiIntegrationsNotionConnectRoute
   '/api/mcp/v1/me': typeof ApiMcpV1MeRoute
   '/api/mcp/v1/spaces': typeof ApiMcpV1SpacesRoute
   '/api/mcp/v1/tasks': typeof ApiMcpV1TasksRouteWithChildren
@@ -180,12 +214,16 @@ export interface FileRoutesById {
   '/v1/mcp': typeof V1McpRoute
   '/_auth/app/about': typeof AuthAppAboutRoute
   '/_auth/app/focus': typeof AuthAppFocusRoute
+  '/_auth/app/learning': typeof AuthAppLearningRoute
   '/_auth/app/profile': typeof AuthAppProfileRoute
+  '/_auth/app/shortcuts': typeof AuthAppShortcutsRoute
   '/_auth/app/timeline': typeof AuthAppTimelineRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/public/$slug': typeof ApiPublicSlugRoute
   '/_auth/app/': typeof AuthAppIndexRoute
   '/_auth/app/tasks/$taskId': typeof AuthAppTasksTaskIdRoute
+  '/api/integrations/notion/callback': typeof ApiIntegrationsNotionCallbackRoute
+  '/api/integrations/notion/connect': typeof ApiIntegrationsNotionConnectRoute
   '/api/mcp/v1/me': typeof ApiMcpV1MeRoute
   '/api/mcp/v1/spaces': typeof ApiMcpV1SpacesRoute
   '/api/mcp/v1/tasks': typeof ApiMcpV1TasksRouteWithChildren
@@ -202,12 +240,16 @@ export interface FileRouteTypes {
     | '/v1/mcp'
     | '/app/about'
     | '/app/focus'
+    | '/app/learning'
     | '/app/profile'
+    | '/app/shortcuts'
     | '/app/timeline'
     | '/api/auth/$'
     | '/api/public/$slug'
     | '/app/'
     | '/app/tasks/$taskId'
+    | '/api/integrations/notion/callback'
+    | '/api/integrations/notion/connect'
     | '/api/mcp/v1/me'
     | '/api/mcp/v1/spaces'
     | '/api/mcp/v1/tasks'
@@ -221,12 +263,16 @@ export interface FileRouteTypes {
     | '/v1/mcp'
     | '/app/about'
     | '/app/focus'
+    | '/app/learning'
     | '/app/profile'
+    | '/app/shortcuts'
     | '/app/timeline'
     | '/api/auth/$'
     | '/api/public/$slug'
     | '/app'
     | '/app/tasks/$taskId'
+    | '/api/integrations/notion/callback'
+    | '/api/integrations/notion/connect'
     | '/api/mcp/v1/me'
     | '/api/mcp/v1/spaces'
     | '/api/mcp/v1/tasks'
@@ -243,12 +289,16 @@ export interface FileRouteTypes {
     | '/v1/mcp'
     | '/_auth/app/about'
     | '/_auth/app/focus'
+    | '/_auth/app/learning'
     | '/_auth/app/profile'
+    | '/_auth/app/shortcuts'
     | '/_auth/app/timeline'
     | '/api/auth/$'
     | '/api/public/$slug'
     | '/_auth/app/'
     | '/_auth/app/tasks/$taskId'
+    | '/api/integrations/notion/callback'
+    | '/api/integrations/notion/connect'
     | '/api/mcp/v1/me'
     | '/api/mcp/v1/spaces'
     | '/api/mcp/v1/tasks'
@@ -263,6 +313,8 @@ export interface RootRouteChildren {
   V1McpRoute: typeof V1McpRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiPublicSlugRoute: typeof ApiPublicSlugRoute
+  ApiIntegrationsNotionCallbackRoute: typeof ApiIntegrationsNotionCallbackRoute
+  ApiIntegrationsNotionConnectRoute: typeof ApiIntegrationsNotionConnectRoute
   ApiMcpV1MeRoute: typeof ApiMcpV1MeRoute
   ApiMcpV1SpacesRoute: typeof ApiMcpV1SpacesRoute
   ApiMcpV1TasksRoute: typeof ApiMcpV1TasksRouteWithChildren
@@ -354,11 +406,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthAppTimelineRouteImport
       parentRoute: typeof AuthAppRouteRoute
     }
+    '/_auth/app/shortcuts': {
+      id: '/_auth/app/shortcuts'
+      path: '/shortcuts'
+      fullPath: '/app/shortcuts'
+      preLoaderRoute: typeof AuthAppShortcutsRouteImport
+      parentRoute: typeof AuthAppRouteRoute
+    }
     '/_auth/app/profile': {
       id: '/_auth/app/profile'
       path: '/profile'
       fullPath: '/app/profile'
       preLoaderRoute: typeof AuthAppProfileRouteImport
+      parentRoute: typeof AuthAppRouteRoute
+    }
+    '/_auth/app/learning': {
+      id: '/_auth/app/learning'
+      path: '/learning'
+      fullPath: '/app/learning'
+      preLoaderRoute: typeof AuthAppLearningRouteImport
       parentRoute: typeof AuthAppRouteRoute
     }
     '/_auth/app/focus': {
@@ -396,6 +462,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiMcpV1MeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/integrations/notion/connect': {
+      id: '/api/integrations/notion/connect'
+      path: '/api/integrations/notion/connect'
+      fullPath: '/api/integrations/notion/connect'
+      preLoaderRoute: typeof ApiIntegrationsNotionConnectRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/integrations/notion/callback': {
+      id: '/api/integrations/notion/callback'
+      path: '/api/integrations/notion/callback'
+      fullPath: '/api/integrations/notion/callback'
+      preLoaderRoute: typeof ApiIntegrationsNotionCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_auth/app/tasks/$taskId': {
       id: '/_auth/app/tasks/$taskId'
       path: '/tasks/$taskId'
@@ -416,7 +496,9 @@ declare module '@tanstack/react-router' {
 interface AuthAppRouteRouteChildren {
   AuthAppAboutRoute: typeof AuthAppAboutRoute
   AuthAppFocusRoute: typeof AuthAppFocusRoute
+  AuthAppLearningRoute: typeof AuthAppLearningRoute
   AuthAppProfileRoute: typeof AuthAppProfileRoute
+  AuthAppShortcutsRoute: typeof AuthAppShortcutsRoute
   AuthAppTimelineRoute: typeof AuthAppTimelineRoute
   AuthAppIndexRoute: typeof AuthAppIndexRoute
   AuthAppTasksTaskIdRoute: typeof AuthAppTasksTaskIdRoute
@@ -425,7 +507,9 @@ interface AuthAppRouteRouteChildren {
 const AuthAppRouteRouteChildren: AuthAppRouteRouteChildren = {
   AuthAppAboutRoute: AuthAppAboutRoute,
   AuthAppFocusRoute: AuthAppFocusRoute,
+  AuthAppLearningRoute: AuthAppLearningRoute,
   AuthAppProfileRoute: AuthAppProfileRoute,
+  AuthAppShortcutsRoute: AuthAppShortcutsRoute,
   AuthAppTimelineRoute: AuthAppTimelineRoute,
   AuthAppIndexRoute: AuthAppIndexRoute,
   AuthAppTasksTaskIdRoute: AuthAppTasksTaskIdRoute,
@@ -481,6 +565,8 @@ const rootRouteChildren: RootRouteChildren = {
   V1McpRoute: V1McpRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiPublicSlugRoute: ApiPublicSlugRoute,
+  ApiIntegrationsNotionCallbackRoute: ApiIntegrationsNotionCallbackRoute,
+  ApiIntegrationsNotionConnectRoute: ApiIntegrationsNotionConnectRoute,
   ApiMcpV1MeRoute: ApiMcpV1MeRoute,
   ApiMcpV1SpacesRoute: ApiMcpV1SpacesRoute,
   ApiMcpV1TasksRoute: ApiMcpV1TasksRouteWithChildren,

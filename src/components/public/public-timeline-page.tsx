@@ -32,6 +32,7 @@ type PublicTaskRow = {
 export type PublicPageData = {
   profile: { slug: string };
   owner: { name: string; image: string | null };
+  selectedSpace?: { id: string; name: string; publicSlug: string } | null;
   tasks: PublicTaskRow[];
 };
 
@@ -96,8 +97,12 @@ function railColor(accent: string | null, space: string | null): string | null {
 type Filter = "all" | "todo" | "done";
 
 export function PublicTimelinePage({ data }: { readonly data: PublicPageData }) {
-  const { profile, owner, tasks } = data;
+  const { profile, owner, tasks, selectedSpace } = data;
   const [filter, setFilter] = useState<Filter>("all");
+  const spaceQuery = selectedSpace?.publicSlug
+    ? `?space=${encodeURIComponent(selectedSpace.publicSlug)}`
+    : "";
+  const apiBase = `/api/public/${profile.slug}${spaceQuery}`;
 
   const filtered = useMemo(() => {
     if (filter === "all") return tasks;
@@ -145,51 +150,60 @@ export function PublicTimelinePage({ data }: { readonly data: PublicPageData }) 
         </div>
       </header>
 
-      <div className="mx-auto max-w-3xl px-4 pt-12 pb-20 sm:px-6 sm:pt-16">
-        <div className="flex flex-col items-center text-center sm:items-start sm:text-left">
-          <div className="flex w-full flex-col items-center gap-6 sm:flex-row sm:items-end sm:gap-8">
-            <OwnerAvatar name={owner.name} image={owner.image} className="size-24 sm:size-28" />
-            <div className="min-w-0 flex-1 space-y-3">
-              <p className="inline-flex items-center gap-2 text-xs font-medium tracking-[0.2em] text-muted-foreground uppercase">
-                <SparklesIcon className="size-3.5 shrink-0" aria-hidden />
-                Public timeline
-              </p>
-              <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl md:text-[2.75rem] md:leading-[1.1]">
-                {owner.name}
-              </h1>
-              <p className="font-mono text-sm text-muted-foreground">/p/{profile.slug}</p>
-              <p className="max-w-xl text-base leading-relaxed text-pretty text-muted-foreground">
-                Work and plans shared openly — organized by space, with outcomes when something
-                ships.
-              </p>
-            </div>
+      <div className="mx-auto max-w-3xl px-4 pt-8 pb-20 sm:px-6 sm:pt-10">
+        <div className="space-y-3 border-b border-border/55 pb-4">
+          <div className="flex flex-wrap items-center gap-2 text-[11px]">
+            <span className="inline-flex items-center gap-1 font-semibold tracking-widest text-muted-foreground uppercase">
+              <SparklesIcon className="size-3.5" aria-hidden />
+              Public timeline
+            </span>
+            <span className="text-muted-foreground">·</span>
+            <span className="inline-flex items-center gap-1.5 text-foreground">
+              <OwnerAvatar name={owner.name} image={owner.image} className="size-4.5" />
+              <span className="text-xs font-medium">{owner.name}</span>
+            </span>
+            <span className="font-mono text-muted-foreground">/p/{profile.slug}</span>
+            {selectedSpace ? (
+              <span className="text-muted-foreground">#{selectedSpace.name}</span>
+            ) : null}
           </div>
-
-          <div className="mt-10 flex w-full flex-wrap items-center justify-center gap-3 sm:justify-start">
-            <div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card/40 px-4 py-2 text-sm shadow-sm backdrop-blur-sm">
-              <CircleDashedIcon className="size-4 text-chart-2" aria-hidden />
-              <span className="font-medium tabular-nums">{openCount}</span>
-              <span className="text-muted-foreground">open</span>
-            </div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card/40 px-4 py-2 text-sm shadow-sm backdrop-blur-sm">
+          <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+            <span className="inline-flex items-center gap-1">
+              <CircleDashedIcon className="size-3.5 text-chart-2" aria-hidden />
+              <span className="tabular-nums">{openCount}</span> open
+            </span>
+            <span className="inline-flex items-center gap-1">
               <CheckCircle2Icon
-                className="size-4 text-emerald-600 dark:text-emerald-400"
+                className="size-3.5 text-emerald-600 dark:text-emerald-400"
                 aria-hidden
               />
-              <span className="font-medium tabular-nums">{doneCount}</span>
-              <span className="text-muted-foreground">done</span>
-            </div>
+              <span className="tabular-nums">{doneCount}</span> done
+            </span>
             <a
-              href={`/api/public/${profile.slug}`}
-              className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-muted/30 px-4 py-2 text-sm text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground"
+              href={apiBase}
+              className="inline-flex items-center gap-1.5 underline-offset-4 hover:text-foreground hover:underline"
             >
-              JSON API
+              JSON
+              <ExternalLinkIcon className="size-3.5" aria-hidden />
+            </a>
+            <a
+              href={`${apiBase}${spaceQuery ? "&" : "?"}format=raw`}
+              className="inline-flex items-center gap-1.5 underline-offset-4 hover:text-foreground hover:underline"
+            >
+              Raw
+              <ExternalLinkIcon className="size-3.5" aria-hidden />
+            </a>
+            <a
+              href={`${apiBase}${spaceQuery ? "&" : "?"}format=rss`}
+              className="inline-flex items-center gap-1.5 underline-offset-4 hover:text-foreground hover:underline"
+            >
+              RSS
               <ExternalLinkIcon className="size-3.5" aria-hidden />
             </a>
           </div>
         </div>
 
-        <div className="mt-12 flex flex-wrap items-center justify-center gap-2 sm:justify-start">
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-2 sm:justify-start">
           {(
             [
               ["all", "All"],
@@ -210,7 +224,7 @@ export function PublicTimelinePage({ data }: { readonly data: PublicPageData }) 
           ))}
         </div>
 
-        <div className="mt-10 space-y-12">
+        <div className="mt-8 space-y-10">
           {filtered.length === 0 ? (
             <div className="rounded-3xl border border-dashed border-border/80 bg-card/30 px-6 py-16 text-center backdrop-blur-sm">
               <LayersIcon className="mx-auto size-10 text-muted-foreground/50" aria-hidden />
@@ -233,7 +247,7 @@ export function PublicTimelinePage({ data }: { readonly data: PublicPageData }) 
                   </h2>
                   <span className="text-xs text-muted-foreground tabular-nums">{rows.length}</span>
                 </div>
-                <ul className="space-y-3">
+                <ul className="space-y-0">
                   {rows.map((t) => {
                     const windowLabel = formatTaskWindow(t);
                     const hex = railColor(t.accentColor, t.spaceColor);
@@ -241,18 +255,18 @@ export function PublicTimelinePage({ data }: { readonly data: PublicPageData }) 
                       <li
                         key={t.id}
                         className={cn(
-                          "flex overflow-hidden rounded-2xl border border-border/50 bg-card/50 shadow-sm backdrop-blur-sm transition-[box-shadow,transform] duration-300 hover:border-border hover:shadow-md",
+                          "flex overflow-hidden border-b border-border/55 bg-transparent py-3 transition-colors hover:bg-muted/20",
                           t.status === "done" && "opacity-95",
                         )}
                       >
                         <div
                           className={cn(
-                            "w-1 shrink-0 self-stretch",
+                            "w-0.5 shrink-0 self-stretch",
                             !hex && "bg-muted-foreground/20",
                           )}
                           style={hex ? { backgroundColor: hex } : undefined}
                         />
-                        <div className="min-w-0 flex-1 px-4 py-4 sm:px-5">
+                        <div className="min-w-0 flex-1 px-3 py-1 sm:px-4">
                           <div className="flex flex-wrap items-start gap-3">
                             {t.icon ? (
                               <span className="text-xl leading-none select-none" aria-hidden>

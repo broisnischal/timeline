@@ -13,6 +13,8 @@ export const createSpaceSchema = z.object({
   name: z.string().min(1).max(120),
   description: z.string().max(2000).optional(),
   color: z.string().max(32).optional(),
+  isPublic: z.boolean().optional(),
+  publicSlug: slugSchema.optional(),
 });
 
 export const updateSpaceSchema = z.object({
@@ -20,6 +22,8 @@ export const updateSpaceSchema = z.object({
   name: z.string().min(1).max(120).optional(),
   description: z.string().max(2000).nullable().optional(),
   color: z.string().max(32).nullable().optional(),
+  isPublic: z.boolean().optional(),
+  publicSlug: slugSchema.nullable().optional(),
   sortOrder: z.number().int().optional(),
 });
 
@@ -27,10 +31,36 @@ export const deleteSpaceSchema = z.object({
   id: z.string(),
 });
 
+export const inviteSpaceMemberSchema = z.object({
+  spaceId: z.string(),
+  email: z.email().max(320),
+});
+
+export const listSpaceCollaboratorsSchema = z.object({
+  spaceId: z.string(),
+});
+
+export const revokeSpaceInviteSchema = z.object({
+  inviteId: z.string(),
+});
+
+export const respondToSpaceInviteSchema = z.object({
+  inviteId: z.string(),
+  action: z.enum(["accept", "decline"]),
+});
+
 export const listTasksSchema = z.object({
   spaceId: z.string().optional(),
   from: z.string().optional(),
   to: z.string().optional(),
+});
+
+export const listTimelinePageSchema = z.object({
+  spaceId: z.string().optional(),
+  from: z.string().optional(),
+  to: z.string().optional(),
+  cursor: z.string().optional(),
+  limit: z.number().int().min(1).max(100).optional(),
 });
 
 export const taskSubtaskSchema = z.object({
@@ -92,6 +122,11 @@ export const updatePublicProfileSchema = z.object({
 
 export const publicSlugParamSchema = z.object({
   slug: slugSchema,
+});
+
+export const publicTasksBySlugInputSchema = z.object({
+  slug: slugSchema,
+  space: slugSchema.optional(),
 });
 
 export const yearActivityInputSchema = z.object({

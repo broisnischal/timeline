@@ -72,8 +72,8 @@ function HomePage() {
         onSpaceChange={handleSpaceChange}
       />
 
-      <main className="mx-auto max-w-3xl px-4 pt-12 pb-24">
-        <div className="mx-auto max-w-2xl text-center">
+      <main className="mx-auto max-w-5xl px-6 pt-16 pb-28 sm:px-8">
+        <div className="mx-auto max-w-3xl text-center">
           <p className="mb-4 inline-flex items-center gap-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">
             <SparklesIcon className="size-3.5" />
             Calm task & timeline workspace
@@ -81,13 +81,13 @@ function HomePage() {
           <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">
             Organize what you will do.
           </h1>
-          <p className="mx-auto mt-5 max-w-lg text-lg leading-relaxed text-muted-foreground">
+          <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground">
             Quickly add plans in a single line and let AI organize your tasks always know what's
             next and stay on track.
           </p>
         </div>
 
-        <div className="mx-auto mt-10 max-w-2xl">
+        <div className="mx-auto mt-14 max-w-3xl">
           <div className="mx-auto w-full max-w-xl">
             {!isPending && user && spaces.data?.length ? (
               <PlanCapture
@@ -103,18 +103,18 @@ function HomePage() {
               <PlanCapture activeSpaceId="" variant="landing" />
             )}
           </div>
-          <div className="mt-5 grid grid-cols-[1fr_auto] gap-4 border-b border-dashed border-border/60 pb-2 text-left text-[11px] font-medium tracking-wide text-muted-foreground/80 uppercase">
+          <div className="mt-7 grid grid-cols-[1fr_auto] gap-4 border-b border-dashed border-border/60 pb-3 text-left text-[11px] font-medium tracking-wide text-muted-foreground/80 uppercase">
             <span>Title</span>
             <span className="pr-1">Created</span>
           </div>
-          <p className="mt-5 text-center text-sm leading-relaxed text-muted-foreground">
+          <p className="mt-6 text-center text-sm leading-relaxed text-muted-foreground">
             {user
               ? "Plans save to the category you chose in the bar above. Open the full workspace for timeline and categories."
               : "Sign up to save plans and sync across devices."}
           </p>
         </div>
 
-        <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
+        <div className="mt-12 flex flex-wrap items-center justify-center gap-3.5">
           {!isPending && user ? (
             <Button
               nativeButton={false}
@@ -141,8 +141,8 @@ function HomePage() {
           )}
         </div>
 
-        <section className="mx-auto mt-20 max-w-3xl">
-          <div className="mb-6 text-center">
+        <section className="mx-auto mt-24 max-w-5xl">
+          <div className="mb-8 text-center">
             <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
               Available now
             </p>
@@ -150,7 +150,7 @@ function HomePage() {
               Everything you need to plan and ship
             </h2>
           </div>
-          <ul className="grid gap-4 sm:grid-cols-2">
+          <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {[
               {
                 icon: FolderIcon,
@@ -185,9 +185,9 @@ function HomePage() {
             ].map((item) => (
               <li
                 key={item.title}
-                className="rounded-2xl border border-border/60 bg-card/35 p-5 backdrop-blur-sm"
+                className="rounded-2xl border border-border/60 bg-card/35 p-6 backdrop-blur-sm"
               >
-                <item.icon className="mb-3 size-5 text-foreground/80" aria-hidden />
+                <item.icon className="mb-4 size-5 text-foreground/80" aria-hidden />
                 <h3 className="font-medium tracking-tight">{item.title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{item.body}</p>
               </li>
@@ -195,7 +195,7 @@ function HomePage() {
           </ul>
         </section>
 
-        <footer className="mx-auto mt-16 max-w-3xl border-t border-border/50 py-6">
+        <footer className="mx-auto mt-20 max-w-5xl border-t border-border/50 py-8">
           <div className="flex flex-col items-center justify-between gap-3 text-xs text-muted-foreground sm:flex-row">
             <p>Built with Timeline for calm planning.</p>
             <div className="flex items-center gap-4">

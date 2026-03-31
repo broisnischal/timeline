@@ -29,6 +29,34 @@
       "when": 1774853600017,
       "tag": "0003_cooing_falcon",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1774940321598,
+      "tag": "0004_adorable_rumiko_fujikawa",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1774943000000,
+      "tag": "0005_public_space_feed",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1774946146857,
+      "tag": "0006_unique_hex",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1774949000000,
+      "tag": "0007_space_collab",
+      "breakpoints": true
     }
   ]
 }

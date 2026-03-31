@@ -66,6 +66,10 @@ function isTodayDay(day: string) {
   return day === k;
 }
 
+function sectionIdForDay(day: string) {
+  return `timeline-day-${day}`;
+}
+
 /** Matches TimelineFeedRow / spine at left-5 (center of 2.5rem rail). */
 const DAY_GRID = "grid grid-cols-[2.5rem_3px_minmax(0,1fr)] gap-x-3 sm:gap-x-4";
 
@@ -92,117 +96,115 @@ export function TimelineView({
   }
 
   return (
-    <div className="space-y-12">
-      {overdue.length > 0 ? (
-        <section className="relative">
-          <div
-            className="pointer-events-none absolute top-0 bottom-0 left-5 z-0 w-px bg-border/70 max-sm:hidden"
-            aria-hidden
-          />
-          <div className="relative z-[1]">
-            <div className={cn(DAY_GRID, "items-stretch pb-3")}>
-              <div className="flex items-center justify-center">
-                <span
-                  className="flex size-5 items-center justify-center rounded-full border border-background bg-destructive/10 text-[10px] font-bold text-destructive ring-1 ring-destructive/25"
-                  aria-hidden
-                >
-                  !
-                </span>
-              </div>
-              <div className="w-[3px] rounded-full bg-destructive/35" aria-hidden />
-              <div className="flex min-w-0 items-center gap-3">
-                <h2 className="shrink-0 text-xs font-semibold tracking-wider text-destructive uppercase">
-                  Overdue
-                </h2>
-                <div className="h-px min-w-0 flex-1 bg-border/70" aria-hidden />
-                <span className="shrink-0 text-[11px] text-muted-foreground tabular-nums">
-                  {overdue.length}
-                </span>
-              </div>
-            </div>
-            <ul className="divide-y divide-border/50">
-              {overdue.map((row) => (
-                <li key={row.id} className="py-5 first:pt-0 last:pb-0">
-                  <TimelineFeedRow
-                    row={row}
-                    search={search}
-                    onToggleDone={(id) => toggle.mutate(id)}
-                    togglePending={toggle.isPendingFor(row.id)}
-                  />
-                </li>
-              ))}
-            </ul>
-          </div>
-        </section>
-      ) : null}
-
-      {grouped.length > 0 ? (
-        <div className="space-y-10">
-          {grouped.map(([day, dayTasks]) => {
-            const today = isTodayDay(day);
-            const sorted = [...dayTasks].sort((a, b) => anchor(a).getTime() - anchor(b).getTime());
-            const dayNum = parseLocalDay(day).getDate();
-            return (
-              <section key={day} className="relative">
-                <div
-                  className="pointer-events-none absolute top-0 bottom-0 left-5 z-0 w-px bg-border/70 max-sm:hidden"
-                  aria-hidden
-                />
-                <div className="relative z-[1]">
-                  <div className={cn(DAY_GRID, "items-stretch pb-3")}>
-                    <div className="flex items-center justify-center">
-                      <span
-                        className={cn(
-                          "flex size-5 items-center justify-center rounded-full border border-background text-[10px] font-semibold tabular-nums ring-1 ring-border/45",
-                          today
-                            ? "bg-primary/12 text-primary ring-primary/30"
-                            : "bg-muted/50 text-muted-foreground",
-                        )}
-                        aria-hidden
-                      >
-                        {dayNum}
-                      </span>
-                    </div>
-                    <div className="w-[3px] self-stretch rounded-full bg-border/60" aria-hidden />
-                    <div className="flex min-w-0 items-center gap-3">
-                      <h2
-                        className={cn(
-                          "min-w-0 truncate text-sm font-medium tracking-tight tabular-nums",
-                          today ? "text-foreground" : "text-foreground/90",
-                        )}
-                      >
-                        {dateHeadingFmt.format(parseLocalDay(day))}
-                      </h2>
-                      <div className="h-px min-w-0 flex-1 bg-border/70" aria-hidden />
-                      {today ? (
-                        <span className="shrink-0 text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
-                          Today
-                        </span>
-                      ) : null}
-                    </div>
-                  </div>
-                  <ul className="divide-y divide-border/50">
-                    {sorted.map((row) => (
-                      <li key={row.id} className="py-5 first:pt-0 last:pb-0">
-                        <TimelineFeedRow
-                          row={row}
-                          search={search}
-                          onToggleDone={(id) => toggle.mutate(id)}
-                          togglePending={toggle.isPendingFor(row.id)}
-                        />
-                      </li>
-                    ))}
-                  </ul>
+    <div className="relative space-y-12">
+      <div className="relative">
+        <div className="pointer-events-none absolute top-1 bottom-1 left-5 z-0 w-px bg-border/65 max-sm:hidden" />
+        <div className="pointer-events-none absolute top-1 bottom-1 left-4 z-0 w-3 bg-linear-to-r from-primary/5 to-transparent blur-sm max-sm:hidden" />
+        {overdue.length > 0 ? (
+          <section id="timeline-day-overdue" className="relative scroll-mt-24">
+            <div className="relative z-1">
+              <div className={cn(DAY_GRID, "items-stretch pb-3")}>
+                <div className="flex items-center justify-center">
+                  <span
+                    className="flex size-6 items-center justify-center rounded-full border border-background bg-destructive/10 text-[10px] font-bold text-destructive shadow-sm ring-1 ring-destructive/25"
+                    aria-hidden
+                  >
+                    !
+                  </span>
                 </div>
-              </section>
-            );
-          })}
-        </div>
-      ) : (
-        <p className="py-6 text-center text-sm text-muted-foreground">
-          No upcoming items in this window — overdue items are listed above.
-        </p>
-      )}
+                <div className="w-[3px] rounded-full bg-destructive/35" aria-hidden />
+                <div className="flex min-w-0 items-center gap-3">
+                  <h2 className="shrink-0 text-xs font-semibold tracking-wider text-destructive uppercase">
+                    Overdue
+                  </h2>
+                  <div className="h-px min-w-0 flex-1 bg-border/70" aria-hidden />
+                  <span className="shrink-0 rounded-full bg-destructive/10 px-2 py-0.5 text-[11px] text-destructive tabular-nums">
+                    {overdue.length}
+                  </span>
+                </div>
+              </div>
+              <ul className="divide-y divide-border/50">
+                {overdue.map((row) => (
+                  <li key={row.id} className="py-5 first:pt-0 last:pb-0">
+                    <TimelineFeedRow
+                      row={row}
+                      search={search}
+                      onToggleDone={(id) => toggle.mutate(id)}
+                      togglePending={toggle.isPendingFor(row.id)}
+                    />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </section>
+        ) : null}
+
+        {grouped.length > 0 ? (
+          <div className="space-y-10">
+            {grouped.map(([day, dayTasks]) => {
+              const today = isTodayDay(day);
+              const sorted = [...dayTasks].sort(
+                (a, b) => anchor(a).getTime() - anchor(b).getTime(),
+              );
+              const dayNum = parseLocalDay(day).getDate();
+              return (
+                <section key={day} id={sectionIdForDay(day)} className="relative scroll-mt-24">
+                  <div className="relative z-1">
+                    <div className={cn(DAY_GRID, "items-stretch pb-3")}>
+                      <div className="flex items-center justify-center">
+                        <span
+                          className={cn(
+                            "flex size-6 items-center justify-center rounded-full border border-background text-[11px] font-semibold tabular-nums shadow-sm ring-1 ring-border/45",
+                            today
+                              ? "bg-primary/12 text-primary ring-primary/30"
+                              : "bg-muted/50 text-muted-foreground",
+                          )}
+                          aria-hidden
+                        >
+                          {dayNum}
+                        </span>
+                      </div>
+                      <div className="w-[3px] self-stretch rounded-full bg-border/60" aria-hidden />
+                      <div className="flex min-w-0 items-center gap-3">
+                        <h2
+                          className={cn(
+                            "min-w-0 truncate text-base font-semibold tracking-tight tabular-nums",
+                            today ? "text-foreground" : "text-foreground/90",
+                          )}
+                        >
+                          {dateHeadingFmt.format(parseLocalDay(day))}
+                        </h2>
+                        <div className="h-px min-w-0 flex-1 bg-border/70" aria-hidden />
+                        {today ? (
+                          <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium tracking-wide text-primary uppercase">
+                            Today
+                          </span>
+                        ) : null}
+                      </div>
+                    </div>
+                    <ul className="divide-y divide-border/50">
+                      {sorted.map((row) => (
+                        <li key={row.id} className="py-5 first:pt-0 last:pb-0">
+                          <TimelineFeedRow
+                            row={row}
+                            search={search}
+                            onToggleDone={(id) => toggle.mutate(id)}
+                            togglePending={toggle.isPendingFor(row.id)}
+                          />
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </section>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="py-6 text-center text-sm text-muted-foreground">
+            No upcoming items in this window — overdue items are listed above.
+          </p>
+        )}
+      </div>
     </div>
   );
 }

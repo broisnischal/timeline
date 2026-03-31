@@ -20,6 +20,8 @@ import {
   type TaskSubtask,
   publicProfile,
   space,
+  spaceInvite,
+  spaceMember,
   task,
 } from "@/lib/db/schema/timeline.schema";
 
@@ -27,6 +29,58 @@ import type { YearActivityCell } from "./year-activity.types";
 
 function newId() {
   return crypto.randomUUID();
+}
+
+function normalizeEmail(email: string) {
+  return email.trim().toLowerCase();
+}
+
+function userCanAccessSpaceSql(userId: string) {
+  return or(
+    eq(space.userId, userId),
+    sql`exists (
+      select 1
+      from ${spaceMember}
+      where ${spaceMember.spaceId} = ${space.id}
+        and ${spaceMember.userId} = ${userId}
+    )`,
+  )!;
+}
+
+function userCanAccessTaskSpaceSql(userId: string) {
+  return sql`exists (
+    select 1
+    from ${space}
+    where ${space.id} = ${task.spaceId}
+      and (
+        ${space.userId} = ${userId}
+        or exists (
+          select 1
+          from ${spaceMember}
+          where ${spaceMember.spaceId} = ${task.spaceId}
+            and ${spaceMember.userId} = ${userId}
+        )
+      )
+  )`;
+}
+
+async function getSpaceAccess(
+  userId: string,
+  spaceId: string,
+): Promise<{ isOwner: boolean; role: "owner" | "editor" } | null> {
+  const [owned] = await db
+    .select({ id: space.id })
+    .from(space)
+    .where(and(eq(space.id, spaceId), eq(space.userId, userId)))
+    .limit(1);
+  if (owned) return { isOwner: true, role: "owner" };
+  const [member] = await db
+    .select({ role: spaceMember.role })
+    .from(spaceMember)
+    .where(and(eq(spaceMember.spaceId, spaceId), eq(spaceMember.userId, userId)))
+    .limit(1);
+  if (!member) return null;
+  return { isOwner: false, role: member.role };
 }
 
 export async function ensureDefaultSpace(userId: string) {
@@ -45,18 +99,35 @@ export async function ensureDefaultSpace(userId: string) {
 
 export async function listSpacesWithCounts(userId: string) {
   const inbox = await ensureDefaultSpace(userId);
-  const spaces = await db
+  const ownedSpaces = await db
     .select()
     .from(space)
     .where(eq(space.userId, userId))
     .orderBy(asc(space.sortOrder), asc(space.name));
+  const memberSpaceRows = await db
+    .select({ s: space, role: spaceMember.role })
+    .from(spaceMember)
+    .innerJoin(space, eq(spaceMember.spaceId, space.id))
+    .where(eq(spaceMember.userId, userId))
+    .orderBy(asc(space.sortOrder), asc(space.name));
+  const spaces = [
+    ...ownedSpaces.map((s) => ({ ...s, isOwner: true as const, memberRole: "owner" as const })),
+    ...memberSpaceRows
+      .filter((r) => r.s.userId !== userId)
+      .map((r) => ({ ...r.s, isOwner: false as const, memberRole: r.role })),
+  ];
   const counts = await db
     .select({
       spaceId: task.spaceId,
       n: count(),
     })
     .from(task)
-    .where(eq(task.userId, userId))
+    .where(
+      inArray(
+        task.spaceId,
+        spaces.map((s) => s.id),
+      ),
+    )
     .groupBy(task.spaceId);
   const map = new Map(counts.map((c) => [c.spaceId, Number(c.n)]));
   return spaces.map((s) => ({
@@ -68,7 +139,13 @@ export async function listSpacesWithCounts(userId: string) {
 
 export async function createSpaceRow(
   userId: string,
-  input: { name: string; description?: string | undefined; color?: string | undefined },
+  input: {
+    name: string;
+    description?: string | undefined;
+    color?: string | undefined;
+    isPublic?: boolean | undefined;
+    publicSlug?: string | undefined;
+  },
 ) {
   const maxOrder = await db
     .select({ m: max(space.sortOrder) })
@@ -82,6 +159,8 @@ export async function createSpaceRow(
     name: input.name,
     description: input.description,
     color: input.color,
+    isPublic: input.isPublic ?? false,
+    publicSlug: input.publicSlug?.trim() || null,
     sortOrder: next,
   });
   const row = await db.select().from(space).where(eq(space.id, id));
@@ -95,6 +174,8 @@ export async function updateSpaceRow(
     name?: string | undefined;
     description?: string | null | undefined;
     color?: string | null | undefined;
+    isPublic?: boolean | undefined;
+    publicSlug?: string | null | undefined;
     sortOrder?: number | undefined;
   },
 ) {
@@ -109,6 +190,8 @@ export async function updateSpaceRow(
       ...(input.name !== undefined ? { name: input.name } : {}),
       ...(input.description !== undefined ? { description: input.description } : {}),
       ...(input.color !== undefined ? { color: input.color } : {}),
+      ...(input.isPublic !== undefined ? { isPublic: input.isPublic } : {}),
+      ...(input.publicSlug !== undefined ? { publicSlug: input.publicSlug } : {}),
       ...(input.sortOrder !== undefined ? { sortOrder: input.sortOrder } : {}),
     })
     .where(eq(space.id, input.id));
@@ -135,13 +218,35 @@ function parseOptionalDate(s: string | undefined) {
   return d;
 }
 
+type TimelineCursorPayload = {
+  anchor: string;
+  createdAt: string;
+  id: string;
+};
+
+function encodeTimelineCursor(payload: TimelineCursorPayload) {
+  return Buffer.from(JSON.stringify(payload), "utf8").toString("base64url");
+}
+
+function decodeTimelineCursor(cursor: string | undefined): TimelineCursorPayload | null {
+  if (!cursor) return null;
+  try {
+    const raw = Buffer.from(cursor, "base64url").toString("utf8");
+    const parsed = JSON.parse(raw) as TimelineCursorPayload;
+    if (!parsed?.anchor || !parsed?.createdAt || !parsed?.id) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
 export async function listTasksForUser(
   userId: string,
   opts: { spaceId?: string | undefined; from?: string | undefined; to?: string | undefined },
 ) {
   const fromD = opts.from ? new Date(opts.from) : undefined;
   const toD = opts.to ? new Date(opts.to) : undefined;
-  const conditions: SQL[] = [eq(task.userId, userId)];
+  const conditions: SQL[] = [userCanAccessSpaceSql(userId)];
   if (opts.spaceId) conditions.push(eq(task.spaceId, opts.spaceId));
   // postgres.js cannot bind JS Date — use ISO strings (PG compares as timestamptz).
   if (fromD && !Number.isNaN(fromD.getTime())) {
@@ -170,6 +275,74 @@ export async function listTasksForUser(
     .orderBy(asc(anchor), desc(task.createdAt));
 }
 
+export async function listTimelineTasksPageForUser(
+  userId: string,
+  opts: {
+    spaceId?: string | undefined;
+    from?: string | undefined;
+    to?: string | undefined;
+    cursor?: string | undefined;
+    limit?: number | undefined;
+  },
+) {
+  const fromD = opts.from ? new Date(opts.from) : undefined;
+  const toD = opts.to ? new Date(opts.to) : undefined;
+  const conditions: SQL[] = [userCanAccessSpaceSql(userId)];
+  if (opts.spaceId) conditions.push(eq(task.spaceId, opts.spaceId));
+  if (fromD && !Number.isNaN(fromD.getTime())) {
+    conditions.push(
+      sql`coalesce(${task.startsAt}, ${task.dueAt}, ${task.createdAt}) >= ${fromD.toISOString()}`,
+    );
+  }
+  if (toD && !Number.isNaN(toD.getTime())) {
+    conditions.push(
+      sql`coalesce(${task.startsAt}, ${task.dueAt}, ${task.createdAt}) <= ${toD.toISOString()}`,
+    );
+  }
+
+  const cursor = decodeTimelineCursor(opts.cursor);
+  const anchorExpr = sql`coalesce(${task.startsAt}, ${task.dueAt}, ${task.createdAt})`;
+  if (cursor) {
+    conditions.push(
+      sql`(
+        ${anchorExpr} > ${cursor.anchor}
+        or (${anchorExpr} = ${cursor.anchor} and ${task.createdAt} < ${cursor.createdAt})
+        or (${anchorExpr} = ${cursor.anchor} and ${task.createdAt} = ${cursor.createdAt} and ${task.id} < ${cursor.id})
+      )`,
+    );
+  }
+
+  const whereClause = conditions.length === 1 ? conditions[0]! : and(...conditions);
+  const limit = Math.min(100, Math.max(1, opts.limit ?? 40));
+
+  const rows = await db
+    .select({
+      ...getTableColumns(task),
+      spaceName: space.name,
+      spaceColor: space.color,
+    })
+    .from(task)
+    .innerJoin(space, eq(task.spaceId, space.id))
+    .where(whereClause)
+    .orderBy(asc(anchorExpr), desc(task.createdAt), desc(task.id))
+    .limit(limit + 1);
+
+  const hasMore = rows.length > limit;
+  const items = rows.slice(0, limit);
+  const last = rows[limit - 1];
+  const lastAnchor = last ? (last.startsAt ?? last.dueAt ?? last.createdAt) : null;
+  const nextCursor =
+    hasMore && lastAnchor && last.createdAt
+      ? encodeTimelineCursor({
+          anchor: new Date(lastAnchor).toISOString(),
+          createdAt: new Date(last.createdAt).toISOString(),
+          id: last.id,
+        })
+      : null;
+
+  return { items, nextCursor };
+}
+
 export async function getTaskByIdForUser(userId: string, taskId: string) {
   const rows = await db
     .select({
@@ -179,7 +352,7 @@ export async function getTaskByIdForUser(userId: string, taskId: string) {
     })
     .from(task)
     .innerJoin(space, eq(task.spaceId, space.id))
-    .where(and(eq(task.id, taskId), eq(task.userId, userId)))
+    .where(and(eq(task.id, taskId), userCanAccessSpaceSql(userId)))
     .limit(1);
   return rows[0] ?? null;
 }
@@ -199,11 +372,10 @@ export async function createTaskRow(
     accentColor?: string | undefined;
   },
 ) {
-  const [sp] = await db
-    .select()
-    .from(space)
-    .where(and(eq(space.id, input.spaceId), eq(space.userId, userId)));
+  const [sp] = await db.select().from(space).where(eq(space.id, input.spaceId));
   if (!sp) throw new Error("Space not found");
+  const access = await getSpaceAccess(userId, sp.id);
+  if (!access) throw new Error("Space not found");
   const id = newId();
   const startsAt = parseOptionalDate(input.startsAt);
   const dueAt = parseOptionalDate(input.dueAt);
@@ -219,7 +391,8 @@ export async function createTaskRow(
     startsAt,
     dueAt,
     durationMinutes: input.durationMinutes,
-    isPublic: input.isPublic ?? false,
+    // Tasks created inside a public space are always public.
+    isPublic: sp.isPublic ? true : (input.isPublic ?? false),
     status: "todo",
   });
   const row = await db.select().from(task).where(eq(task.id, id));
@@ -247,15 +420,25 @@ export async function updateTaskRow(
   const [t] = await db
     .select()
     .from(task)
-    .where(and(eq(task.id, input.id), eq(task.userId, userId)));
+    .where(and(eq(task.id, input.id), userCanAccessTaskSpaceSql(userId)));
   if (!t) throw new Error("Task not found");
   if (input.spaceId) {
-    const [sp] = await db
-      .select()
-      .from(space)
-      .where(and(eq(space.id, input.spaceId), eq(space.userId, userId)));
+    const [sp] = await db.select().from(space).where(eq(space.id, input.spaceId));
     if (!sp) throw new Error("Space not found");
+    const access = await getSpaceAccess(userId, sp.id);
+    if (!access) throw new Error("Space not found");
   }
+  const nextSpaceIsPublic = input.spaceId
+    ? Boolean(
+        (
+          await db
+            .select({ isPublic: space.isPublic })
+            .from(space)
+            .where(eq(space.id, input.spaceId))
+            .limit(1)
+        )[0]?.isPublic,
+      )
+    : false;
   const startsAt =
     input.startsAt === undefined
       ? undefined
@@ -283,7 +466,12 @@ export async function updateTaskRow(
       ...(input.dueAt !== undefined ? { dueAt } : {}),
       ...(input.durationMinutes !== undefined ? { durationMinutes: input.durationMinutes } : {}),
       ...(input.status !== undefined ? { status: input.status } : {}),
-      ...(input.isPublic !== undefined ? { isPublic: input.isPublic } : {}),
+      // Moving a task into a public space forces it public.
+      ...(input.spaceId && nextSpaceIsPublic
+        ? { isPublic: true }
+        : input.isPublic !== undefined
+          ? { isPublic: input.isPublic }
+          : {}),
       ...(input.spaceId !== undefined ? { spaceId: input.spaceId } : {}),
       ...(input.icon !== undefined ? { icon: input.icon } : {}),
       ...(input.accentColor !== undefined ? { accentColor: input.accentColor } : {}),
@@ -317,7 +505,7 @@ export async function listRecentActivityForUser(userId: string, limit: number) {
     })
     .from(task)
     .innerJoin(space, eq(task.spaceId, space.id))
-    .where(eq(task.userId, userId));
+    .where(userCanAccessSpaceSql(userId));
 
   const out: ActivityFeedEntry[] = [];
   for (const r of rows) {
@@ -343,7 +531,7 @@ export async function appendTaskActivityRow(userId: string, taskId: string, body
   const [t] = await db
     .select()
     .from(task)
-    .where(and(eq(task.id, taskId), eq(task.userId, userId)));
+    .where(and(eq(task.id, taskId), userCanAccessTaskSpaceSql(userId)));
   if (!t) throw new Error("Task not found");
   const log = (t.activityLog as TaskActivityEntry[]) ?? [];
   const next: TaskActivityEntry[] = [
@@ -357,7 +545,10 @@ export async function appendTaskActivityRow(userId: string, taskId: string, body
 
 /** Sample tasks for empty accounts — only runs when the user has zero tasks. */
 export async function seedDemoTimelineTasks(userId: string) {
-  const [{ n }] = await db.select({ n: count() }).from(task).where(eq(task.userId, userId));
+  const [{ n }] = await db
+    .select({ n: count() })
+    .from(task)
+    .where(userCanAccessTaskSpaceSql(userId));
   if (Number(n) > 0) {
     return { inserted: 0, skipped: true as const };
   }
@@ -481,7 +672,7 @@ export async function toggleTaskDone(userId: string, taskId: string) {
   const [t] = await db
     .select()
     .from(task)
-    .where(and(eq(task.id, taskId), eq(task.userId, userId)));
+    .where(and(eq(task.id, taskId), userCanAccessTaskSpaceSql(userId)));
   if (!t) throw new Error("Task not found");
   const next = t.status === "done" ? "todo" : "done";
   await db
@@ -499,9 +690,224 @@ export async function deleteTaskRow(userId: string, taskId: string) {
   const [t] = await db
     .select()
     .from(task)
-    .where(and(eq(task.id, taskId), eq(task.userId, userId)));
+    .where(and(eq(task.id, taskId), userCanAccessTaskSpaceSql(userId)));
   if (!t) throw new Error("Task not found");
   await db.delete(task).where(eq(task.id, taskId));
+}
+
+export async function listSpaceCollaborators(userId: string, spaceId: string) {
+  const access = await getSpaceAccess(userId, spaceId);
+  if (!access) throw new Error("Space not found");
+
+  const [sp] = await db.select().from(space).where(eq(space.id, spaceId)).limit(1);
+  if (!sp) throw new Error("Space not found");
+
+  const [owner] = await db
+    .select({ id: user.id, name: user.name, email: user.email, image: user.image })
+    .from(user)
+    .where(eq(user.id, sp.userId))
+    .limit(1);
+
+  const memberRows = await db
+    .select({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      image: user.image,
+      role: spaceMember.role,
+      joinedAt: spaceMember.joinedAt,
+    })
+    .from(spaceMember)
+    .innerJoin(user, eq(spaceMember.userId, user.id))
+    .where(eq(spaceMember.spaceId, spaceId))
+    .orderBy(asc(user.name), asc(user.email));
+
+  const invites = await db
+    .select({
+      id: spaceInvite.id,
+      invitedEmail: spaceInvite.invitedEmail,
+      status: spaceInvite.status,
+      createdAt: spaceInvite.createdAt,
+      expiresAt: spaceInvite.expiresAt,
+      invitedUserId: spaceInvite.invitedUserId,
+      invitedByUserId: spaceInvite.invitedByUserId,
+    })
+    .from(spaceInvite)
+    .where(and(eq(spaceInvite.spaceId, spaceId), eq(spaceInvite.status, "pending")))
+    .orderBy(desc(spaceInvite.createdAt));
+
+  return {
+    space: { id: sp.id, name: sp.name, ownerUserId: sp.userId, isOwner: access.isOwner },
+    members: [
+      ...(owner
+        ? [
+            {
+              id: owner.id,
+              name: owner.name,
+              email: owner.email,
+              image: owner.image,
+              role: "owner" as const,
+              joinedAt: sp.createdAt,
+            },
+          ]
+        : []),
+      ...memberRows.map((m) => ({
+        id: m.id,
+        name: m.name,
+        email: m.email,
+        image: m.image,
+        role: m.role,
+        joinedAt: m.joinedAt,
+      })),
+    ],
+    invites,
+  };
+}
+
+export async function inviteUserToSpace(userId: string, input: { spaceId: string; email: string }) {
+  const access = await getSpaceAccess(userId, input.spaceId);
+  if (!access?.isOwner) throw new Error("Only the space owner can invite collaborators");
+
+  const email = normalizeEmail(input.email);
+  const [invited] = await db.select().from(user).where(eq(user.email, email)).limit(1);
+  if (!invited) throw new Error("No account found with that email");
+  if (invited.id === userId) throw new Error("You cannot invite yourself");
+
+  const existingMember = await getSpaceAccess(invited.id, input.spaceId);
+  if (existingMember) throw new Error("This user already has access to the space");
+
+  const [pending] = await db
+    .select({ id: spaceInvite.id })
+    .from(spaceInvite)
+    .where(
+      and(
+        eq(spaceInvite.spaceId, input.spaceId),
+        eq(spaceInvite.invitedEmail, email),
+        eq(spaceInvite.status, "pending"),
+      ),
+    )
+    .limit(1);
+  if (pending) throw new Error("A pending invite already exists for this user");
+
+  const id = newId();
+  const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7);
+  await db.insert(spaceInvite).values({
+    id,
+    spaceId: input.spaceId,
+    invitedEmail: email,
+    invitedUserId: invited.id,
+    invitedByUserId: userId,
+    status: "pending",
+    expiresAt,
+  });
+  const [created] = await db.select().from(spaceInvite).where(eq(spaceInvite.id, id)).limit(1);
+  return created!;
+}
+
+export async function revokeSpaceInvite(userId: string, inviteId: string) {
+  const [invite] = await db.select().from(spaceInvite).where(eq(spaceInvite.id, inviteId)).limit(1);
+  if (!invite) throw new Error("Invite not found");
+  const access = await getSpaceAccess(userId, invite.spaceId);
+  if (!access?.isOwner) throw new Error("Only the space owner can revoke invites");
+  if (invite.status !== "pending") throw new Error("Invite is no longer pending");
+  await db
+    .update(spaceInvite)
+    .set({ status: "revoked", respondedAt: new Date() })
+    .where(eq(spaceInvite.id, invite.id));
+}
+
+export async function listMyPendingSpaceInvites(userId: string) {
+  const [me] = await db
+    .select({ email: user.email })
+    .from(user)
+    .where(eq(user.id, userId))
+    .limit(1);
+  if (!me) return [];
+  const email = normalizeEmail(me.email);
+  return db
+    .select({
+      id: spaceInvite.id,
+      status: spaceInvite.status,
+      createdAt: spaceInvite.createdAt,
+      expiresAt: spaceInvite.expiresAt,
+      spaceId: space.id,
+      spaceName: space.name,
+      inviterName: user.name,
+      inviterEmail: user.email,
+    })
+    .from(spaceInvite)
+    .innerJoin(space, eq(spaceInvite.spaceId, space.id))
+    .innerJoin(user, eq(spaceInvite.invitedByUserId, user.id))
+    .where(
+      and(
+        eq(spaceInvite.status, "pending"),
+        or(eq(spaceInvite.invitedUserId, userId), eq(spaceInvite.invitedEmail, email)),
+      ),
+    )
+    .orderBy(desc(spaceInvite.createdAt));
+}
+
+export async function respondToSpaceInvite(
+  userId: string,
+  input: { inviteId: string; action: "accept" | "decline" },
+) {
+  const [invite] = await db
+    .select()
+    .from(spaceInvite)
+    .where(eq(spaceInvite.id, input.inviteId))
+    .limit(1);
+  if (!invite) throw new Error("Invite not found");
+  if (invite.status !== "pending") throw new Error("Invite is no longer pending");
+
+  const [me] = await db
+    .select({ email: user.email })
+    .from(user)
+    .where(eq(user.id, userId))
+    .limit(1);
+  if (!me) throw new Error("User not found");
+  const meEmail = normalizeEmail(me.email);
+  if (invite.invitedUserId !== userId && normalizeEmail(invite.invitedEmail) !== meEmail) {
+    throw new Error("You do not have permission to respond to this invite");
+  }
+
+  if (invite.expiresAt && new Date(invite.expiresAt).getTime() < Date.now()) {
+    await db
+      .update(spaceInvite)
+      .set({ status: "expired", respondedAt: new Date() })
+      .where(eq(spaceInvite.id, invite.id));
+    throw new Error("Invite has expired");
+  }
+
+  if (input.action === "decline") {
+    await db
+      .update(spaceInvite)
+      .set({ status: "declined", respondedAt: new Date() })
+      .where(eq(spaceInvite.id, invite.id));
+    return { accepted: false as const };
+  }
+
+  const alreadyAccess = await getSpaceAccess(userId, invite.spaceId);
+  if (!alreadyAccess) {
+    await db
+      .insert(spaceMember)
+      .values({
+        id: newId(),
+        spaceId: invite.spaceId,
+        userId,
+        role: "editor",
+        joinedAt: new Date(),
+      })
+      .onConflictDoNothing();
+  }
+  await db
+    .update(spaceInvite)
+    .set({
+      status: "accepted",
+      respondedAt: new Date(),
+      invitedUserId: userId,
+    })
+    .where(eq(spaceInvite.id, invite.id));
+  return { accepted: true as const };
 }
 
 /** Last `days` days of completion counts + current streak (days with ≥1 completion, ending today). */
@@ -516,7 +922,7 @@ export async function getStreakStats(userId: string, days = 14) {
     .from(task)
     .where(
       and(
-        eq(task.userId, userId),
+        userCanAccessTaskSpaceSql(userId),
         eq(task.status, "done"),
         sql`${task.completedAt} >= ${start.toISOString()}`,
         sql`${task.completedAt} is not null`,
@@ -564,7 +970,7 @@ export async function getYearActivityGrid(userId: string, year?: number) {
     .from(task)
     .where(
       and(
-        eq(task.userId, userId),
+        userCanAccessTaskSpaceSql(userId),
         or(
           and(
             eq(task.status, "done"),
@@ -681,7 +1087,7 @@ export async function upsertPublicProfile(userId: string, slug: string, enabled:
   return getPublicProfileForUser(userId);
 }
 
-export async function getPublicTasksBySlug(slug: string) {
+export async function getPublicTasksBySlug(slug: string, opts?: { space?: string | undefined }) {
   const [row] = await db
     .select({
       profile: publicProfile,
@@ -692,8 +1098,25 @@ export async function getPublicTasksBySlug(slug: string) {
     .innerJoin(user, eq(publicProfile.userId, user.id))
     .where(eq(publicProfile.slug, slug))
     .limit(1);
-  if (!row?.profile.enabled) return null;
+  if (row?.profile.enabled !== true) return null;
   const { profile } = row;
+  let selectedSpace: { id: string; name: string; publicSlug: string } | null = null;
+  if (opts?.space) {
+    const [sp] = await db
+      .select({ id: space.id, name: space.name, publicSlug: space.publicSlug })
+      .from(space)
+      .where(
+        and(
+          eq(space.userId, profile.userId),
+          eq(space.isPublic, true),
+          eq(space.publicSlug, opts.space),
+        ),
+      )
+      .limit(1);
+    if (!sp || !sp.publicSlug) return null;
+    selectedSpace = { id: sp.id, name: sp.name, publicSlug: sp.publicSlug };
+  }
+
   const tasks = await db
     .select({
       ...getTableColumns(task),
@@ -704,8 +1127,9 @@ export async function getPublicTasksBySlug(slug: string) {
     .innerJoin(space, eq(task.spaceId, space.id))
     .where(
       and(
-        eq(task.userId, profile.userId),
+        eq(space.userId, profile.userId),
         eq(task.isPublic, true),
+        ...(selectedSpace ? [eq(task.spaceId, selectedSpace.id)] : []),
         inArray(task.status, ["todo", "done"]),
       ),
     )
@@ -713,6 +1137,7 @@ export async function getPublicTasksBySlug(slug: string) {
   return {
     profile,
     owner: { name: row.ownerName, image: row.ownerImage },
+    selectedSpace,
     tasks,
   };
 }

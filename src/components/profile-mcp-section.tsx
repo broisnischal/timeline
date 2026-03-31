@@ -48,24 +48,27 @@ function CopyRow({
   return (
     <div
       className={cn(
-        "flex items-stretch overflow-hidden rounded-lg border border-border/80 bg-muted/25 dark:bg-muted/20",
+        "rounded-xl border border-border/60 bg-background/70 px-3 py-2.5 transition-colors hover:border-border/80 hover:bg-background",
         className,
       )}
     >
-      <div className="min-w-0 flex-1 px-3 py-2.5">
-        <p className="text-[10px] font-medium tracking-[0.12em] text-muted-foreground uppercase">
-          {label}
-        </p>
-        <p className="mt-1 font-mono text-[13px] leading-snug break-all text-foreground">{value}</p>
+      <div className="min-w-0 space-y-1">
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-[10px] font-medium tracking-[0.12em] text-muted-foreground uppercase">
+            {label}
+          </p>
+          <button
+            type="button"
+            onClick={() => void copy()}
+            aria-label={copyLabel}
+            className="inline-flex h-6 shrink-0 items-center gap-1 rounded-md border border-border/60 px-1.5 text-[11px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            <CopyIcon className="size-3.5" />
+            Copy
+          </button>
+        </div>
+        <p className="font-mono text-[13px] leading-snug break-all text-foreground">{value}</p>
       </div>
-      <button
-        type="button"
-        onClick={() => void copy()}
-        aria-label={copyLabel}
-        className="flex w-11 shrink-0 items-center justify-center border-l border-border/60 bg-muted/40 text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground"
-      >
-        <CopyIcon className="size-4" />
-      </button>
     </div>
   );
 }
@@ -308,7 +311,7 @@ export const ProfileMcpSection = memo(function ProfileMcpSection() {
             </Button>
           </div>
 
-          <div className="flex shrink-0 items-center gap-3 rounded-lg border border-border/50 bg-muted/15 px-3 py-2 sm:flex-col sm:items-end sm:py-3">
+          <div className="flex shrink-0 items-center gap-3 rounded-xl border border-border/60 bg-background/70 px-3 py-2 sm:flex-col sm:items-end sm:py-3">
             <Label htmlFor="mcp-enabled" className="text-sm font-medium sm:sr-only">
               Access
             </Label>
@@ -354,27 +357,30 @@ export const ProfileMcpSection = memo(function ProfileMcpSection() {
 
             {data?.keyPrefix ? (
               <div className="space-y-2">
-                <div className="flex items-stretch overflow-hidden rounded-lg border border-border/80 bg-muted/25 dark:bg-muted/20">
-                  <div className="min-w-0 flex-1 px-3 py-2.5">
-                    <p className="text-[10px] font-medium tracking-[0.12em] text-muted-foreground uppercase">
-                      Key fingerprint
-                    </p>
-                    <p className="mt-1 font-mono text-[13px] leading-snug break-all text-foreground">
+                <div className="rounded-xl border border-border/60 bg-background/70 px-3 py-2.5">
+                  <div className="min-w-0 space-y-1">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-[10px] font-medium tracking-[0.12em] text-muted-foreground uppercase">
+                        Key fingerprint
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setShowFingerprint((v) => !v)}
+                        aria-label={showFingerprint ? "Hide fingerprint" : "Show fingerprint"}
+                        className="inline-flex h-6 shrink-0 items-center gap-1 rounded-md border border-border/60 px-1.5 text-[11px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                      >
+                        {showFingerprint ? (
+                          <EyeOffIcon className="size-3.5" />
+                        ) : (
+                          <EyeIcon className="size-3.5" />
+                        )}
+                        {showFingerprint ? "Hide" : "Show"}
+                      </button>
+                    </div>
+                    <p className="font-mono text-[13px] leading-snug break-all text-foreground">
                       {showFingerprint ? data.keyPrefix : "••••••••••••••••"}
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setShowFingerprint((v) => !v)}
-                    aria-label={showFingerprint ? "Hide fingerprint" : "Show fingerprint"}
-                    className="flex w-11 shrink-0 items-center justify-center border-l border-border/60 bg-muted/40 text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground"
-                  >
-                    {showFingerprint ? (
-                      <EyeOffIcon className="size-4" />
-                    ) : (
-                      <EyeIcon className="size-4" />
-                    )}
-                  </button>
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Matches the active secret. The full token is not stored here — only shown once in

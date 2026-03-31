@@ -8,6 +8,7 @@ import {
   pgTable,
   text,
   timestamp,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 
 import { user } from "./auth.schema";
@@ -20,6 +21,14 @@ export type TaskActivityEntry = { id: string; at: string; body: string };
 
 /** Categories / folders (e.g. Content, Reading, Blog). */
 export const taskStatusEnum = pgEnum("task_status", ["todo", "done", "cancelled"]);
+export const spaceMemberRoleEnum = pgEnum("space_member_role", ["owner", "editor"]);
+export const spaceInviteStatusEnum = pgEnum("space_invite_status", [
+  "pending",
+  "accepted",
+  "declined",
+  "revoked",
+  "expired",
+]);
 
 export const space = pgTable(
   "space",
@@ -31,6 +40,10 @@ export const space = pgTable(
     name: text("name").notNull(),
     description: text("description"),
     color: text("color"),
+    /** Optional public feed toggle for this space. */
+    isPublic: boolean("is_public").default(false).notNull(),
+    /** URL-friendly key for public feeds/pages, e.g. "news". */
+    publicSlug: text("public_slug").unique(),
     sortOrder: integer("sort_order").default(0).notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at")
@@ -105,9 +118,57 @@ export const publicProfile = pgTable(
   (t) => [index("public_profile_slug_idx").on(t.slug)],
 );
 
+export const spaceMember = pgTable(
+  "space_member",
+  {
+    id: text("id").primaryKey(),
+    spaceId: text("space_id")
+      .notNull()
+      .references(() => space.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    role: spaceMemberRoleEnum("role").default("editor").notNull(),
+    joinedAt: timestamp("joined_at").defaultNow().notNull(),
+  },
+  (t) => [
+    index("space_member_space_idx").on(t.spaceId),
+    index("space_member_user_idx").on(t.userId),
+    uniqueIndex("space_member_space_user_uidx").on(t.spaceId, t.userId),
+  ],
+);
+
+export const spaceInvite = pgTable(
+  "space_invite",
+  {
+    id: text("id").primaryKey(),
+    spaceId: text("space_id")
+      .notNull()
+      .references(() => space.id, { onDelete: "cascade" }),
+    invitedEmail: text("invited_email").notNull(),
+    invitedUserId: text("invited_user_id").references(() => user.id, { onDelete: "set null" }),
+    invitedByUserId: text("invited_by_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    status: spaceInviteStatusEnum("status").default("pending").notNull(),
+    expiresAt: timestamp("expires_at"),
+    respondedAt: timestamp("responded_at"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => [
+    index("space_invite_space_idx").on(t.spaceId),
+    index("space_invite_email_idx").on(t.invitedEmail),
+    index("space_invite_invited_user_idx").on(t.invitedUserId),
+    index("space_invite_invited_by_idx").on(t.invitedByUserId),
+    index("space_invite_status_idx").on(t.status),
+  ],
+);
+
 export const spaceRelations = relations(space, ({ one, many }) => ({
   user: one(user, { fields: [space.userId], references: [user.id] }),
   tasks: many(task),
+  members: many(spaceMember),
+  invites: many(spaceInvite),
 }));
 
 export const taskRelations = relations(task, ({ one }) => ({
@@ -117,4 +178,15 @@ export const taskRelations = relations(task, ({ one }) => ({
 
 export const publicProfileRelations = relations(publicProfile, ({ one }) => ({
   user: one(user, { fields: [publicProfile.userId], references: [user.id] }),
+}));
+
+export const spaceMemberRelations = relations(spaceMember, ({ one }) => ({
+  space: one(space, { fields: [spaceMember.spaceId], references: [space.id] }),
+  user: one(user, { fields: [spaceMember.userId], references: [user.id] }),
+}));
+
+export const spaceInviteRelations = relations(spaceInvite, ({ one }) => ({
+  space: one(space, { fields: [spaceInvite.spaceId], references: [space.id] }),
+  invitedUser: one(user, { fields: [spaceInvite.invitedUserId], references: [user.id] }),
+  invitedByUser: one(user, { fields: [spaceInvite.invitedByUserId], references: [user.id] }),
 }));

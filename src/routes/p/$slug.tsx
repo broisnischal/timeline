@@ -6,8 +6,13 @@ import { $getPublicTasksBySlug } from "@/lib/timeline/functions";
 
 export const Route = createFileRoute("/p/$slug")({
   component: PublicListPage,
-  loader: async ({ params }) => {
-    const data = await $getPublicTasksBySlug({ data: { slug: params.slug } });
+  staleTime: 0,
+  shouldReload: () => true,
+  loader: async ({ params, location }) => {
+    const maybeSpace = (location.search as Record<string, unknown> | undefined)?.space;
+    const space =
+      typeof maybeSpace === "string" && maybeSpace.trim() ? maybeSpace.trim() : undefined;
+    const data = await $getPublicTasksBySlug({ data: { slug: params.slug, space } });
     return { data };
   },
   head: ({ loaderData }) => {

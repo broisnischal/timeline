@@ -106,7 +106,7 @@ export function TimelineFeedRow({ row, search, onToggleDone, togglePending }: Pr
           ) : null}
 
           <div className="min-w-0 flex-1 space-y-1">
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
               <Link
                 to="/app/tasks/$taskId"
                 params={{ taskId: row.id }}
@@ -125,7 +125,9 @@ export function TimelineFeedRow({ row, search, onToggleDone, togglePending }: Pr
                 />
               </Link>
               {spaceInline ? (
-                <span className="shrink-0 text-xs text-muted-foreground">{spaceInline}</span>
+                <span className="shrink-0 rounded-full border border-border/55 bg-muted/35 px-2 py-0.5 text-[11px] text-muted-foreground">
+                  {spaceInline}
+                </span>
               ) : null}
             </div>
 
@@ -137,7 +139,7 @@ export function TimelineFeedRow({ row, search, onToggleDone, togglePending }: Pr
               </p>
             ) : null}
 
-            <div className="flex flex-wrap items-center gap-2 pt-0.5">
+            <div className="flex flex-wrap items-center gap-2.5 pt-0.5">
               <time
                 className="text-[11px] text-muted-foreground tabular-nums"
                 dateTime={when.toISOString()}
@@ -145,10 +147,14 @@ export function TimelineFeedRow({ row, search, onToggleDone, togglePending }: Pr
                 {timeFmt.format(when)}
               </time>
               {badge === "overdue" ? (
-                <span className="text-[10px] font-medium text-destructive">Overdue</span>
+                <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] font-medium text-destructive">
+                  Overdue
+                </span>
               ) : null}
               {row.isPublic ? (
-                <span className="text-[10px] text-muted-foreground uppercase">Public</span>
+                <span className="rounded-full bg-muted/45 px-2 py-0.5 text-[10px] text-muted-foreground uppercase">
+                  Public
+                </span>
               ) : null}
             </div>
           </div>

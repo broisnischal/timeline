@@ -7,11 +7,16 @@ import {
   appendTaskActivitySchema,
   createSpaceSchema,
   createTaskSchema,
+  inviteSpaceMemberSchema,
+  listSpaceCollaboratorsSchema,
+  listTimelinePageSchema,
+  respondToSpaceInviteSchema,
+  revokeSpaceInviteSchema,
   deleteSpaceSchema,
   emptyObjectSchema,
   getTaskParamsSchema,
   listTasksSchema,
-  publicSlugParamSchema,
+  publicTasksBySlugInputSchema,
   taskIdSchema,
   updatePublicProfileSchema,
   updateSpaceSchema,
@@ -22,10 +27,10 @@ import {
 
 /** Public read — no session required. */
 export const $getPublicTasksBySlug = createServerFn({ method: "GET" })
-  .inputValidator((d: unknown) => publicSlugParamSchema.parse(d ?? {}))
+  .inputValidator((d: unknown) => publicTasksBySlugInputSchema.parse(d ?? {}))
   .handler(async ({ data }) => {
     const { getPublicTasksBySlug } = await import("./repo.server");
-    const result = await getPublicTasksBySlug(data.slug);
+    const result = await getPublicTasksBySlug(data.slug, { space: data.space });
     return result ? rpcSafe(result) : null;
   });
 
@@ -60,12 +65,60 @@ export const $deleteSpace = createServerFn({ method: "POST" })
     await deleteSpaceRow(context.user.id, data.id);
   });
 
+export const $listSpaceCollaborators = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
+  .inputValidator((d: unknown) => listSpaceCollaboratorsSchema.parse(d))
+  .handler(async ({ context, data }) => {
+    const { listSpaceCollaborators } = await import("./repo.server");
+    return rpcSafe(await listSpaceCollaborators(context.user.id, data.spaceId));
+  });
+
+export const $inviteSpaceMember = createServerFn({ method: "POST" })
+  .middleware([freshAuthMiddleware])
+  .inputValidator((d: unknown) => inviteSpaceMemberSchema.parse(d))
+  .handler(async ({ context, data }) => {
+    const { inviteUserToSpace } = await import("./repo.server");
+    return rpcSafe(await inviteUserToSpace(context.user.id, data));
+  });
+
+export const $revokeSpaceInvite = createServerFn({ method: "POST" })
+  .middleware([freshAuthMiddleware])
+  .inputValidator((d: unknown) => revokeSpaceInviteSchema.parse(d))
+  .handler(async ({ context, data }) => {
+    const { revokeSpaceInvite } = await import("./repo.server");
+    await revokeSpaceInvite(context.user.id, data.inviteId);
+  });
+
+export const $listMyPendingSpaceInvites = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
+  .inputValidator((d: unknown) => emptyObjectSchema.parse(d ?? {}))
+  .handler(async ({ context }) => {
+    const { listMyPendingSpaceInvites } = await import("./repo.server");
+    return rpcSafe(await listMyPendingSpaceInvites(context.user.id));
+  });
+
+export const $respondToSpaceInvite = createServerFn({ method: "POST" })
+  .middleware([freshAuthMiddleware])
+  .inputValidator((d: unknown) => respondToSpaceInviteSchema.parse(d))
+  .handler(async ({ context, data }) => {
+    const { respondToSpaceInvite } = await import("./repo.server");
+    return rpcSafe(await respondToSpaceInvite(context.user.id, data));
+  });
+
 export const $listTasks = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .inputValidator((d: unknown) => listTasksSchema.parse(d ?? {}))
   .handler(async ({ context, data }) => {
     const { listTasksForUser } = await import("./repo.server");
     return rpcSafe(await listTasksForUser(context.user.id, data));
+  });
+
+export const $listTimelinePage = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
+  .inputValidator((d: unknown) => listTimelinePageSchema.parse(d ?? {}))
+  .handler(async ({ context, data }) => {
+    const { listTimelineTasksPageForUser } = await import("./repo.server");
+    return rpcSafe(await listTimelineTasksPageForUser(context.user.id, data));
   });
 
 export const $getTask = createServerFn({ method: "GET" })

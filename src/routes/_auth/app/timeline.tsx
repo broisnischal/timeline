@@ -1,8 +1,14 @@
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { getRouteApi } from "@tanstack/react-router";
 import { SparklesIcon } from "lucide-react";
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { toast } from "sonner";
 
 import type { TaskListRow } from "@/components/timeline/task-list";
@@ -12,7 +18,7 @@ import { UpcomingTasksShimmer } from "@/components/timeline/upcoming-tasks-shimm
 import { Button } from "@/components/ui/button";
 import { appSearchSchema } from "@/lib/timeline/app-search";
 import { $seedDemoTimeline } from "@/lib/timeline/functions";
-import { spacesQueryOptions, tasksQueryOptions } from "@/lib/timeline/queries";
+import { spacesQueryOptions, timelineInfiniteQueryOptions } from "@/lib/timeline/queries";
 import { timelineRangeFromPreset } from "@/lib/timeline/range";
 
 const appRouteApi = getRouteApi("/_auth/app");
@@ -33,8 +39,8 @@ export const Route = createFileRoute("/_auth/app/timeline")({
     const range = timelineRangeFromPreset(search.range ?? "1m");
     await Promise.all([
       context.queryClient.ensureQueryData(spacesQueryOptions()),
-      context.queryClient.ensureQueryData(
-        tasksQueryOptions({
+      context.queryClient.ensureInfiniteQueryData(
+        timelineInfiniteQueryOptions({
           ...range,
           ...(search.space ? { spaceId: search.space } : {}),
         }),
@@ -48,23 +54,48 @@ function TimelinePage() {
   const search = appRouteApi.useSearch();
   const range = useMemo(() => timelineRangeFromPreset(search.range ?? "1m"), [search.range]);
 
-  const tasks = useQuery({
-    ...tasksQueryOptions({
+  const tasks = useInfiniteQuery({
+    ...timelineInfiniteQueryOptions({
       ...range,
       ...(search.space ? { spaceId: search.space } : {}),
     }),
-    placeholderData: keepPreviousData,
   });
+  const {
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+    isFetching: isFetchingTimeline,
+    isPending: isPendingTimeline,
+    isError: isTimelineError,
+    data: timelineData,
+  } = tasks;
 
   const spaces = useQuery({
     ...spacesQueryOptions(),
     placeholderData: keepPreviousData,
   });
 
-  const filteredTasks = useMemo(
-    () => (tasks.data ? tasksMatchingQuery(tasks.data, search.q) : []),
-    [tasks.data, search.q],
-  );
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const node = loadMoreRef.current;
+    if (!node) return;
+    if (!hasNextPage) return;
+
+    const obs = new IntersectionObserver(
+      (entries) => {
+        if (!entries[0]?.isIntersecting) return;
+        if (!isFetchingNextPage) void fetchNextPage();
+      },
+      { rootMargin: "600px 0px" },
+    );
+    obs.observe(node);
+    return () => obs.disconnect();
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+
+  const taskRows = useMemo(() => timelineData?.pages.flatMap((p) => p.items) ?? [], [timelineData]);
+
+  const filteredTasks = useMemo(() => tasksMatchingQuery(taskRows, search.q), [taskRows, search.q]);
 
   const seedMut = useMutation({
     mutationFn: () => $seedDemoTimeline({ data: {} }),
@@ -83,15 +114,15 @@ function TimelinePage() {
   });
 
   const initialSpacesLoading = spaces.isPending && spaces.data === undefined;
-  const initialTasksLoading = tasks.isPending && tasks.data === undefined;
-  const spaceRefreshing = tasks.isFetching && tasks.isPlaceholderData;
+  const initialTasksLoading = isPendingTimeline && timelineData === undefined;
+  const spaceRefreshing = isFetchingTimeline && !isFetchingNextPage && timelineData !== undefined;
 
   if (initialSpacesLoading) {
     return (
       <div className="space-y-8">
-        <div className="timeline-shimmer-bg h-8 max-w-[10rem] rounded-md bg-muted" />
+        <div className="timeline-shimmer-bg h-8 max-w-40 rounded-md bg-muted" />
         <div className="timeline-shimmer-bg h-10 max-w-full rounded-md bg-muted/70" />
-        <UpcomingTasksShimmer rows={8} className="min-h-[24rem]" />
+        <UpcomingTasksShimmer rows={8} className="min-h-96" />
       </div>
     );
   }
@@ -100,14 +131,14 @@ function TimelinePage() {
     return <p className="text-center text-sm text-destructive">Could not load spaces.</p>;
   }
 
-  if (tasks.isError && tasks.data === undefined) {
+  if (isTimelineError && timelineData === undefined) {
     return <p className="text-center text-sm text-destructive">Could not load timeline.</p>;
   }
 
-  const emptyRange = tasks.data !== undefined && tasks.data.length === 0;
+  const emptyRange = timelineData !== undefined && taskRows.length === 0;
   const emptySearch =
-    tasks.data !== undefined &&
-    tasks.data.length > 0 &&
+    timelineData !== undefined &&
+    taskRows.length > 0 &&
     filteredTasks.length === 0 &&
     Boolean(search.q?.trim());
 
@@ -126,7 +157,7 @@ function TimelinePage() {
       ) : null}
 
       {initialTasksLoading ? (
-        <UpcomingTasksShimmer rows={8} className="min-h-[28rem]" />
+        <UpcomingTasksShimmer rows={8} className="min-h-112" />
       ) : emptySearch ? (
         <p className="py-16 text-center text-sm text-muted-foreground">
           No tasks match your search.
@@ -153,8 +184,15 @@ function TimelinePage() {
           </Button>
         </div>
       ) : (
-        <div className="relative min-h-[20rem]">
+        <div className="relative min-h-80 space-y-4">
           <TimelineView tasks={filteredTasks} search={search} />
+          <div ref={loadMoreRef} className="h-1 w-full" aria-hidden />
+          {isFetchingNextPage ? (
+            <div className="py-2 text-center text-xs text-muted-foreground">Loading more…</div>
+          ) : null}
+          {!hasNextPage && taskRows.length > 0 ? (
+            <div className="py-2 text-center text-xs text-muted-foreground">End of timeline</div>
+          ) : null}
         </div>
       )}
     </div>
