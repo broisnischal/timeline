@@ -8,7 +8,6 @@ import { ProfileMcpSection } from "@/components/profile-mcp-section";
 import { ProfileNotionSection } from "@/components/profile-notion-section";
 import { PublicSettingsCard } from "@/components/timeline/public-settings-card";
 import { Button } from "@/components/ui/button";
-import { Kbd, KbdGroup } from "@/components/ui/kbd";
 import { $updateUserImage } from "@/lib/auth/functions";
 import { useAuth } from "@/lib/auth/hooks";
 import { authQueryOptions } from "@/lib/auth/queries";
@@ -183,59 +182,6 @@ function ProfilePage() {
           <dd className="mt-1 text-sm">{user?.email ?? "—"}</dd>
         </div>
       </dl>
-
-      <section className="max-w-lg border-t border-border/60 pt-6">
-        <div className="rounded-2xl border border-border/60 bg-card/35 p-4 sm:p-5">
-          <h2 className="text-sm font-medium tracking-tight">Keyboard shortcuts</h2>
-          <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
-            Cross-platform <kbd className="font-mono">Mod</kbd> is{" "}
-            <kbd className="font-mono">⌘</kbd> on macOS and <kbd className="font-mono">Ctrl</kbd> on
-            Windows/Linux.
-          </p>
-          <ul className="mt-4 space-y-2 text-sm">
-            <li className="flex items-center justify-between gap-4 rounded-lg border border-border/50 bg-background/60 px-3 py-2">
-              <span>Open profile</span>
-              <KbdGroup>
-                <Kbd>Mod</Kbd>
-                <Kbd>Shift</Kbd>
-                <Kbd>P</Kbd>
-              </KbdGroup>
-            </li>
-            <li className="flex items-center justify-between gap-4 rounded-lg border border-border/50 bg-background/60 px-3 py-2">
-              <span>Home</span>
-              <KbdGroup>
-                <Kbd>Mod</Kbd>
-                <Kbd>Shift</Kbd>
-                <Kbd>H</Kbd>
-              </KbdGroup>
-            </li>
-            <li className="flex items-center justify-between gap-4 rounded-lg border border-border/50 bg-background/60 px-3 py-2">
-              <span>Timeline</span>
-              <KbdGroup>
-                <Kbd>Mod</Kbd>
-                <Kbd>Shift</Kbd>
-                <Kbd>T</Kbd>
-              </KbdGroup>
-            </li>
-            <li className="flex items-center justify-between gap-4 rounded-lg border border-border/50 bg-background/60 px-3 py-2">
-              <span>Focus</span>
-              <KbdGroup>
-                <Kbd>Mod</Kbd>
-                <Kbd>Shift</Kbd>
-                <Kbd>F</Kbd>
-              </KbdGroup>
-            </li>
-            <li className="flex items-center justify-between gap-4 rounded-lg border border-border/50 bg-background/60 px-3 py-2">
-              <span>Toggle light / dark</span>
-              <KbdGroup>
-                <Kbd>Mod</Kbd>
-                <Kbd>Alt</Kbd>
-                <Kbd>T</Kbd>
-              </KbdGroup>
-            </li>
-          </ul>
-        </div>
-      </section>
     </div>
   );
 }

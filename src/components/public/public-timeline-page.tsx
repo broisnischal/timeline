@@ -12,6 +12,7 @@ import { useMemo, useState } from "react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { SpaceColorDot } from "@/components/timeline/space-color-dot";
 import { Button } from "@/components/ui/button";
+import { isUrlOnlyText, LinkifiedText, toExternalHref } from "@/components/ui/linkified-text";
 import { isHexColor } from "@/lib/timeline/task-appearance";
 import { cn } from "@/lib/utils";
 
@@ -275,15 +276,30 @@ export function PublicTimelinePage({ data }: { readonly data: PublicPageData }) 
                             ) : null}
                             <div className="min-w-0 flex-1">
                               <div className="flex flex-wrap items-center gap-2">
-                                <span
-                                  className={cn(
-                                    "text-base font-medium tracking-tight",
-                                    t.status === "done" &&
-                                      "text-muted-foreground line-through decoration-foreground/25",
-                                  )}
-                                >
-                                  {t.title}
-                                </span>
+                                {isUrlOnlyText(t.title) ? (
+                                  <a
+                                    href={toExternalHref(t.title)}
+                                    target="_blank"
+                                    rel="noreferrer noopener"
+                                    className={cn(
+                                      "text-base font-medium tracking-tight underline decoration-border/70 underline-offset-2 hover:text-foreground",
+                                      t.status === "done" &&
+                                        "text-muted-foreground line-through decoration-foreground/25",
+                                    )}
+                                  >
+                                    {t.title}
+                                  </a>
+                                ) : (
+                                  <span
+                                    className={cn(
+                                      "text-base font-medium tracking-tight",
+                                      t.status === "done" &&
+                                        "text-muted-foreground line-through decoration-foreground/25",
+                                    )}
+                                  >
+                                    {t.title}
+                                  </span>
+                                )}
                                 {t.status === "done" ? (
                                   <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-400">
                                     <CheckCircle2Icon className="size-3" aria-hidden />
@@ -302,12 +318,12 @@ export function PublicTimelinePage({ data }: { readonly data: PublicPageData }) 
                               ) : null}
                               {t.notes ? (
                                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                                  {t.notes}
+                                  <LinkifiedText text={t.notes} />
                                 </p>
                               ) : null}
                               {t.outcome && t.status === "done" ? (
                                 <blockquote className="mt-4 border-l-2 border-foreground/20 pl-4 text-sm leading-relaxed text-foreground/90 italic">
-                                  {t.outcome}
+                                  <LinkifiedText text={t.outcome} />
                                 </blockquote>
                               ) : null}
                             </div>

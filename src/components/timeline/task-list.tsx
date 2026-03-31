@@ -1,4 +1,5 @@
 import { TaskDoneCheckbox } from "@/components/timeline/task-done-checkbox";
+import { isUrlOnlyText, LinkifiedText, toExternalHref } from "@/components/ui/linkified-text";
 import { $listTasks } from "@/lib/timeline/functions";
 import { useToggleTaskDone } from "@/lib/timeline/use-toggle-task-done";
 
@@ -59,9 +60,24 @@ export function TaskList({
                     {row.icon}
                   </span>
                 ) : null}
-                <span className={done ? "text-muted-foreground line-through" : "font-medium"}>
-                  {row.title}
-                </span>
+                {isUrlOnlyText(row.title) ? (
+                  <a
+                    href={toExternalHref(row.title)}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className={
+                      done
+                        ? "text-muted-foreground line-through underline"
+                        : "font-medium underline"
+                    }
+                  >
+                    {row.title}
+                  </a>
+                ) : (
+                  <span className={done ? "text-muted-foreground line-through" : "font-medium"}>
+                    {row.title}
+                  </span>
+                )}
                 {!compact ? (
                   <span className="rounded-md bg-muted/60 px-2 py-0.5 text-xs text-muted-foreground">
                     {row.spaceName}
@@ -72,14 +88,18 @@ export function TaskList({
                 ) : null}
               </div>
               {row.notes ? (
-                <p className="line-clamp-2 text-sm text-muted-foreground">{row.notes}</p>
+                <p className="line-clamp-2 text-sm text-muted-foreground">
+                  <LinkifiedText text={row.notes} />
+                </p>
               ) : null}
               {done && row.outcome ? (
                 <p className="border-l-2 border-foreground/15 pl-3 text-sm">
                   <span className="text-[10px] font-medium text-muted-foreground uppercase">
                     Done
                   </span>
-                  <span className="mt-0.5 block">{row.outcome}</span>
+                  <span className="mt-0.5 block">
+                    <LinkifiedText text={row.outcome} />
+                  </span>
                 </p>
               ) : null}
               <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-muted-foreground">

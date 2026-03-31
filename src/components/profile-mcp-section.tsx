@@ -83,6 +83,12 @@ function McpSetupGuide({
   const origin = env.VITE_BASE_URL.replace(/\/$/, "");
   const streamUrl = `${origin}/v1/mcp`;
   const apiBase = `${origin}/api/mcp/v1`;
+  const timelineObject = `{
+  "url": "${streamUrl}",
+  "headers": {
+    "Authorization": "Bearer <paste secret from Profile>"
+  }
+}`;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -137,7 +143,27 @@ function McpSetupGuide({
                   </code>
                   ).
                 </p>
-                <pre className="rounded-lg border border-border/60 bg-muted/40 p-3 font-mono text-[11px] leading-relaxed break-all text-foreground">{`{
+                <div className="space-y-2">
+                  <div className="flex justify-end">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 gap-1 rounded-md px-2 text-[11px] text-muted-foreground"
+                      onClick={async () => {
+                        try {
+                          await navigator.clipboard.writeText(timelineObject);
+                          toast.success("Copied timeline object");
+                        } catch {
+                          toast.error("Could not copy");
+                        }
+                      }}
+                    >
+                      <CopyIcon className="size-3.5" />
+                      Copy timeline object
+                    </Button>
+                  </div>
+                  <pre className="rounded-lg border border-border/60 bg-muted/40 p-3 font-mono text-[11px] leading-relaxed break-all text-foreground">{`{
   "mcpServers": {
     "timeline": {
       "url": "${streamUrl}",
@@ -147,6 +173,7 @@ function McpSetupGuide({
     }
   }
 }`}</pre>
+                </div>
               </div>
             </li>
             <li className="flex gap-3 border-t border-border/40 py-4">

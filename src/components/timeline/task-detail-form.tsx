@@ -19,6 +19,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { LinkifiedText } from "@/components/ui/linkified-text";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
 import type { TaskSubtask } from "@/lib/db/schema/timeline.schema";
@@ -593,7 +594,9 @@ export function TaskDetailForm({
               <p className="text-[11px] text-muted-foreground">
                 {logTimeFmt.format(new Date(entry.at))}
               </p>
-              <p className="mt-1 leading-relaxed whitespace-pre-wrap">{entry.body}</p>
+              <p className="mt-1 leading-relaxed whitespace-pre-wrap">
+                <LinkifiedText text={entry.body} />
+              </p>
             </li>
           ))}
         </ul>

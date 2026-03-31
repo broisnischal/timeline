@@ -3,6 +3,7 @@ import { ArrowUpRightIcon } from "lucide-react";
 
 import { TaskDoneCheckbox } from "@/components/timeline/task-done-checkbox";
 import type { TaskListRow } from "@/components/timeline/task-list";
+import { isUrlOnlyText, LinkifiedText, toExternalHref } from "@/components/ui/linkified-text";
 import type { AppSearch } from "@/lib/timeline/app-search";
 import { priorityBadge, resolveAccent } from "@/lib/timeline/task-appearance";
 import { cn } from "@/lib/utils";
@@ -107,23 +108,43 @@ export function TimelineFeedRow({ row, search, onToggleDone, togglePending }: Pr
 
           <div className="min-w-0 flex-1 space-y-1">
             <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
-              <Link
-                to="/app/tasks/$taskId"
-                params={{ taskId: row.id }}
-                search={search}
-                className={cn(
-                  "group/title inline-flex max-w-full min-w-0 items-center gap-1 font-medium tracking-tight text-foreground",
-                  done && "text-muted-foreground line-through",
-                )}
-              >
-                <span className="truncate decoration-border/50 underline-offset-4 group-hover/title:underline">
-                  {row.title}
-                </span>
-                <ArrowUpRightIcon
-                  className="size-3.5 shrink-0 opacity-0 transition-opacity group-hover/title:opacity-70"
-                  aria-hidden
-                />
-              </Link>
+              {isUrlOnlyText(row.title) ? (
+                <a
+                  href={toExternalHref(row.title)}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className={cn(
+                    "group/title inline-flex max-w-full min-w-0 items-center gap-1 font-medium tracking-tight text-foreground",
+                    done && "text-muted-foreground line-through",
+                  )}
+                >
+                  <span className="truncate underline decoration-border/50 underline-offset-4">
+                    {row.title}
+                  </span>
+                  <ArrowUpRightIcon
+                    className="size-3.5 shrink-0 opacity-70 transition-opacity"
+                    aria-hidden
+                  />
+                </a>
+              ) : (
+                <Link
+                  to="/app/tasks/$taskId"
+                  params={{ taskId: row.id }}
+                  search={search}
+                  className={cn(
+                    "group/title inline-flex max-w-full min-w-0 items-center gap-1 font-medium tracking-tight text-foreground",
+                    done && "text-muted-foreground line-through",
+                  )}
+                >
+                  <span className="truncate decoration-border/50 underline-offset-4 group-hover/title:underline">
+                    {row.title}
+                  </span>
+                  <ArrowUpRightIcon
+                    className="size-3.5 shrink-0 opacity-0 transition-opacity group-hover/title:opacity-70"
+                    aria-hidden
+                  />
+                </Link>
+              )}
               {spaceInline ? (
                 <span className="shrink-0 rounded-full border border-border/55 bg-muted/35 px-2 py-0.5 text-[11px] text-muted-foreground">
                   {spaceInline}
@@ -135,7 +156,7 @@ export function TimelineFeedRow({ row, search, onToggleDone, togglePending }: Pr
 
             {row.notes ? (
               <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground/90">
-                {row.notes}
+                <LinkifiedText text={row.notes} />
               </p>
             ) : null}
 
