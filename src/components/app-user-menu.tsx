@@ -119,6 +119,13 @@ export function AppUserMenu() {
                 <Kbd>K</Kbd>
               </KbdGroup>
             </div>
+            <div className="flex items-center justify-between rounded-md border border-border/60 px-3 py-2">
+              <span>Timeline assistant</span>
+              <KbdGroup>
+                <Kbd>Mod</Kbd>
+                <Kbd>I</Kbd>
+              </KbdGroup>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

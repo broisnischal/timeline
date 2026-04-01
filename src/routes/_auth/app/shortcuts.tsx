@@ -53,6 +53,7 @@ function ShortcutsPage() {
           <Row label="Go focus" keys={["Mod", "Shift", "F"]} />
           <Row label="Open learning" keys={["Mod", "Shift", "L"]} />
           <Row label="Open shortcuts" keys={["Mod", "Shift", "K"]} />
+          <Row label="Toggle timeline assistant" keys={["Mod", "I"]} />
         </div>
       </section>
     </div>

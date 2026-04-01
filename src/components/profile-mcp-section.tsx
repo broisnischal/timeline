@@ -325,7 +325,8 @@ export const ProfileMcpSection = memo(function ProfileMcpSection() {
               ) : null}
             </div>
             <p className="max-w-prose text-sm leading-relaxed text-muted-foreground">
-              Cursor: MCP URL + Bearer token. Open the guide for the JSON snippet.
+              Cursor: MCP URL + Bearer token. Open the guide for the JSON snippet. The in-app
+              timeline assistant (sparkles in the app header) is available when MCP access is on.
             </p>
             <Button
               type="button"
