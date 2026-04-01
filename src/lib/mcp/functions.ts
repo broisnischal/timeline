@@ -4,16 +4,10 @@ import { authMiddleware, freshAuthMiddleware } from "@/lib/auth/middleware";
 import { rpcSafe } from "@/lib/timeline/rpc-safe";
 import { emptyObjectSchema } from "@/lib/timeline/validators";
 
-import {
-  createMcpKeyForUser,
-  deleteMcpKeyForUser,
-  getMcpKeyByUserId,
-  rotateMcpKeyForUser,
-} from "./repo.server";
-
 export const $getMcpAccess = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .handler(async ({ context }) => {
+    const { getMcpKeyByUserId } = await import("./repo.server");
     const row = await getMcpKeyByUserId(context.user.id);
     if (!row) {
       return {
@@ -33,6 +27,7 @@ export const $enableMcpAccess = createServerFn({ method: "POST" })
   .middleware([freshAuthMiddleware])
   .inputValidator((d: unknown) => emptyObjectSchema.parse(d ?? {}))
   .handler(async ({ context }) => {
+    const { getMcpKeyByUserId, createMcpKeyForUser } = await import("./repo.server");
     const existing = await getMcpKeyByUserId(context.user.id);
     if (existing) {
       return {
@@ -49,6 +44,7 @@ export const $rotateMcpKey = createServerFn({ method: "POST" })
   .middleware([freshAuthMiddleware])
   .inputValidator((d: unknown) => emptyObjectSchema.parse(d ?? {}))
   .handler(async ({ context }) => {
+    const { rotateMcpKeyForUser } = await import("./repo.server");
     const { plainSecret } = await rotateMcpKeyForUser(context.user.id);
     return { apiKey: plainSecret };
   });
@@ -57,5 +53,6 @@ export const $revokeMcpAccess = createServerFn({ method: "POST" })
   .middleware([freshAuthMiddleware])
   .inputValidator((d: unknown) => emptyObjectSchema.parse(d ?? {}))
   .handler(async ({ context }) => {
+    const { deleteMcpKeyForUser } = await import("./repo.server");
     await deleteMcpKeyForUser(context.user.id);
   });

@@ -1,8 +1,6 @@
 import { createMiddleware } from "@tanstack/react-start";
 import { setResponseStatus } from "@tanstack/react-start/server";
 
-import { _getUser } from "@/lib/auth/session.server";
-
 // https://tanstack.com/start/latest/docs/framework/react/guide/middleware
 // These are example middlewares that you can modify and use in your server functions or routes.
 
@@ -15,6 +13,7 @@ import { _getUser } from "@/lib/auth/session.server";
  * @see https://better-auth.com/docs/concepts/session-management#cookie-cache
  */
 export const authMiddleware = createMiddleware().server(async ({ next }) => {
+  const { _getUser } = await import("@/lib/auth/session.server");
   const user = await _getUser();
 
   if (!user) {
@@ -34,6 +33,7 @@ export const authMiddleware = createMiddleware().server(async ({ next }) => {
  * @see https://better-auth.com/docs/concepts/session-management#cookie-cache
  */
 export const freshAuthMiddleware = createMiddleware().server(async ({ next }) => {
+  const { _getUser } = await import("@/lib/auth/session.server");
   const user = await _getUser({
     // ensure session is fresh
     // https://better-auth.com/docs/concepts/session-management#cookie-cache

@@ -3,9 +3,6 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 
 import { freshAuthMiddleware } from "@/lib/auth/middleware";
-import { _getUser } from "@/lib/auth/session.server";
-import { db } from "@/lib/db";
-import { user } from "@/lib/db/schema";
 
 /**
  * This server function is meant to be called via authQueryOptions() in queries.ts,
@@ -15,6 +12,7 @@ import { user } from "@/lib/db/schema";
  * consider using authMiddleware from middleware.ts instead.
  */
 export const $getUser = createServerFn({ method: "GET" }).handler(async () => {
+  const { _getUser } = await import("@/lib/auth/session.server");
   const user = await _getUser();
   return user;
 });
@@ -29,6 +27,7 @@ export const $updateUserImage = createServerFn({ method: "POST" })
   .middleware([freshAuthMiddleware])
   .inputValidator((d: unknown) => updateUserImageSchema.parse(d ?? {}))
   .handler(async ({ context, data }) => {
+    const [{ db }, { user }] = await Promise.all([import("@/lib/db"), import("@/lib/db/schema")]);
     const image = data.imageDataUrl?.trim() || null;
 
     if (image !== null && !IMAGE_DATA_URL_RE.test(image)) {

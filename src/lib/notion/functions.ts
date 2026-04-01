@@ -4,13 +4,6 @@ import * as z from "zod";
 import { freshAuthMiddleware, authMiddleware } from "@/lib/auth/middleware";
 import { rpcSafe } from "@/lib/timeline/rpc-safe";
 
-import {
-  deleteNotionConnection,
-  getNotionConnectionByUserId,
-  setNotionSelectedDatabase,
-} from "./repo.server";
-import { importFromNotion, pushToNotion } from "./sync.server";
-
 const setDatabaseSchema = z.object({
   databaseId: z.string().trim().min(1),
 });
@@ -29,6 +22,7 @@ const notionConnectPath = "/api/integrations/notion/connect";
 export const $getNotionStatus = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .handler(async ({ context }) => {
+    const { getNotionConnectionByUserId } = await import("./repo.server");
     const row = await getNotionConnectionByUserId(context.user.id);
     if (!row) {
       return {
@@ -51,12 +45,14 @@ export const $setNotionDatabase = createServerFn({ method: "POST" })
   .middleware([freshAuthMiddleware])
   .inputValidator((d: unknown) => setDatabaseSchema.parse(d))
   .handler(async ({ context, data }) => {
+    const { setNotionSelectedDatabase } = await import("./repo.server");
     await setNotionSelectedDatabase(context.user.id, data.databaseId);
   });
 
 export const $disconnectNotion = createServerFn({ method: "POST" })
   .middleware([freshAuthMiddleware])
   .handler(async ({ context }) => {
+    const { deleteNotionConnection } = await import("./repo.server");
     await deleteNotionConnection(context.user.id);
   });
 
@@ -64,6 +60,9 @@ export const $importFromNotion = createServerFn({ method: "POST" })
   .middleware([freshAuthMiddleware])
   .inputValidator((d: unknown) => importSchema.parse(d ?? {}))
   .handler(async ({ context, data }) => {
+    const { getNotionConnectionByUserId, setNotionSelectedDatabase } =
+      await import("./repo.server");
+    const { importFromNotion } = await import("./sync.server");
     const row = await getNotionConnectionByUserId(context.user.id);
     const databaseId = data.databaseId ?? row?.selectedDatabaseId ?? null;
     if (!databaseId) {
@@ -79,6 +78,9 @@ export const $pushToNotion = createServerFn({ method: "POST" })
   .middleware([freshAuthMiddleware])
   .inputValidator((d: unknown) => pushSchema.parse(d ?? {}))
   .handler(async ({ context, data }) => {
+    const { getNotionConnectionByUserId, setNotionSelectedDatabase } =
+      await import("./repo.server");
+    const { pushToNotion } = await import("./sync.server");
     const row = await getNotionConnectionByUserId(context.user.id);
     const databaseId = data.databaseId ?? row?.selectedDatabaseId ?? null;
     if (!databaseId) {
